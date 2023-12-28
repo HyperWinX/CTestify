@@ -44,13 +44,6 @@ long double totaltime = 0;
 
 void test_main();
 
-int converttime(double value, char* buffer) {
-    sprintf(buffer, "%f", value);
-    if (value >= 1.0) return SECONDS;
-    else if (value > 0.0001) return MILLISECONDS;
-    else if (value > 0.0000001) return MICROSECONDS;
-}
-
 void expect_func_int8_eq(int8_t (*func)(), char* funcname, int8_t expected, int line){
     CHECK_ASSERT_FAILURE
     HANDLE_PHASE1
@@ -239,7 +232,7 @@ int main(){
         return 0;
     }
     first_phase = 0;
-    printf("%s[=========]%s Running %d tests\n", ANSI_COLOR_GREEN, ANSI_COLOR_RESET, total_functions, totaltime);
+    printf("%s[=========]%s Running %d tests\n", ANSI_COLOR_GREEN, ANSI_COLOR_RESET, total_functions);
     test_main();
     printf("%s[=========]%s %d tests (%Lfs total)\n\n", ANSI_COLOR_GREEN, ANSI_COLOR_RESET, total_functions, totaltime);
     printf("%s[ SUCCESS ]%s %d tests.\n", ANSI_COLOR_GREEN, ANSI_COLOR_RESET, successed);
