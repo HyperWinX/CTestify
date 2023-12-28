@@ -9,7 +9,7 @@ int fucking_function_test(){
 }
 
 void test_main(){
-    EXPECT_INT_EQ(func, 1);
-    EXPECT_INT_EQ(func, 2);
-    EXPECT_INT_EQ(fucking_function_test, 3);
+    EXPECT_FUNC_INT_EQ(func, 1);
+    EXPECT_FUNC_INT_EQ(func, 2);
+    EXPECT_FUNC_INT_EQ(fucking_function_test, 3);
 }

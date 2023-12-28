@@ -8,8 +8,9 @@
 #define ANSI_COLOR_RESET   "\x1b[0m"
 
 #define SPACECOUNT max_funcname_len - strlen(funcname)
+#define OFFSET SPACECOUNT,""
 
-#define EXPECT_INT_EQ(func,expected) expect_int_eq(func,#func,expected);
+#define EXPECT_FUNC_INT_EQ(func,expected) expect_func_int_eq(func,#func,expected);
 #define ASSERT_INT_EQ(func,expected) assert_int_eq(func,#func,expected);
 
 int total_functions = 0;
@@ -25,10 +26,11 @@ void converttime(double value, char* buffer) {
     sprintf(buffer, "%f", value);
 }
 
-void expect_int_eq(int (*func)(), char* funcname, int expected){
+void expect_func_int_eq(int (*func)(), char* funcname, int expected){
     if (first_phase == 1){
         total_functions++;
-        if (strlen(funcname) > max_funcname_len) max_funcname_len = strlen(funcname);
+        int len = strlen(funcname);
+        if (len > max_funcname_len) max_funcname_len = len;
         return;
     }
     printf("%s%*s%s%s%s\n", funcname, max_funcname_len - strlen(funcname), "", ANSI_COLOR_GREEN, " [ RUN     ]", ANSI_COLOR_RESET);
@@ -41,8 +43,7 @@ void expect_int_eq(int (*func)(), char* funcname, int expected){
     if (retcode == expected){
         printf("%s%*s%s%s%s %ss\n",
                 funcname, 
-                SPACECOUNT, 
-                "", 
+                OFFSET,
                 ANSI_COLOR_GREEN, 
                 " [      OK ]", 
                 ANSI_COLOR_RESET, 
@@ -52,8 +53,7 @@ void expect_int_eq(int (*func)(), char* funcname, int expected){
     else{
         printf("%s%*s%s%s%s %ss\n", 
                 funcname,
-                SPACECOUNT, 
-                "", 
+                OFFSET, 
                 ANSI_COLOR_RED, 
                 " [ FAILURE ]", 
                 ANSI_COLOR_RESET, 
