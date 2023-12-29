@@ -1,15 +1,16 @@
 #include "ctestify.h"
 
 int func(){
-    return 1;
+    int *p = 0;
+    *p = 0xDEAD;
 }
 
 int fucking_function_test(){
-    return 2;
+    return 5;
 }
 
 void test_main(){
-    EXPECT_FUNC_INT_EQ(func, 1);
-    EXPECT_FUNC_INT_EQ(func, 2);
-    EXPECT_FUNC_INT_EQ(fucking_function_test, 3);
+    EXPECT_FUNC_INT_EQ(fucking_function_test, 2);
+    ASSERT_FUNC_INT_EQ(fucking_function_test, 2);
+    EXPECT_FUNC_INT_EQ(fucking_function_test, 2);
 }
