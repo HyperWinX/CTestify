@@ -5,15 +5,13 @@
 #include <signal.h>
 #include <setjmp.h>
 
+//Colors ANSI escape sequences
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
 #define ANSI_COLOR_YELLOW  "\x1b[33m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
 
-#define SECONDS 1
-#define MILLISECONDS 2
-#define MICROSECONDS 3
-
+//Function bodies
 #define EXPECT_FUNC_INT_BODY CHECK_ASSERT_FAILURE \
     HANDLE_PHASE1 \
     PRINT_RUN \
@@ -28,12 +26,11 @@
     } else{ stop = clock(); sigsegv++; } \
     long double time = ((double)(stop - start)) / CLOCKS_PER_SEC; \
     totaltime += time; \
-    if (!executed && sigsegv) printf("%s%s%s %s:%d (%Lfs)\n", ANSI_COLOR_RED, sigsegv ? "[ SIGSEGV ]" : "[ FAILURE ]", ANSI_COLOR_RESET, funcname, line, time); \
+    if (!executed && sigsegv){ PRINT_SIGSEGV failed++;} \
     else if (retcode == expected){ \
-        printf("%s%s%s %s (%Lfs)\n", ANSI_COLOR_GREEN, "[      OK ]", ANSI_COLOR_RESET, funcname, time); successed++; \
+        PRINT_OK successed++; \
     } else { \
-        printf("%s  Expected: %d\n  Got: %d%s\n", ANSI_COLOR_RED, expected, retcode, ANSI_COLOR_RESET); failed++;} ran++;
-
+        PRINT_EXPECTED failed++;} ran++;
 #define ASSERT_FUNC_INT_BODY CHECK_ASSERT_FAILURE \
     HANDLE_PHASE1 \
     PRINT_RUN \
@@ -48,23 +45,28 @@
     } else{ stop = clock(); sigsegv++;} \
     long double time = ((double)(stop - start)) / CLOCKS_PER_SEC; \
     totaltime += time; \
-    if (!executed && sigsegv){ printf("%s%s%s %s:%d (%Lfs)\n", ANSI_COLOR_RED, sigsegv ? "[ SIGSEGV ]" : "[ FAILURE ]", ANSI_COLOR_RESET, funcname, line, time); failed++; assert_failed++;} \
+    if (!executed && sigsegv){ PRINT_SIGSEGV failed++; assert_failed++;} \
     else if (retcode == expected){ \
-        printf("%s%s%s %s (%Lfs)\n", ANSI_COLOR_GREEN, "[      OK ]", ANSI_COLOR_RESET, funcname, time); successed++; \
+        PRINT_OK successed++; \
     } else { \
-        printf("%s  Expected: %d\n  Got: %d%s\n", ANSI_COLOR_RED, expected, retcode, ANSI_COLOR_RESET); failed++; assert_failed++;} ran++;
+        PRINT_EXPECTED failed++; assert_failed++;} ran++;
 
+//Small macroses for more easy functions structure, automatizing routines
 #define SPACECOUNT max_funcname_len - strlen(funcname)
 #define OFFSET SPACECOUNT,""
 #define CHECK_ASSERT_FAILURE if (assert_failed) return;
-#define PRINT_RUN printf("%s%s%s %s\n", ANSI_COLOR_GREEN, "[ RUN     ]", ANSI_COLOR_RESET, funcname);
+#define PRINT_RUN printf("%s%s%s [%s] %s\n", ANSI_COLOR_GREEN, "[ RUN     ]", ANSI_COLOR_RESET, current_tests, funcname);
+#define PRINT_SIGSEGV printf("%s%s%s [%s] %s:%d (%Lfs)\n", ANSI_COLOR_RED, sigsegv ? "[ SIGSEGV ]" : "[ FAILURE ]", ANSI_COLOR_RESET, current_tests, funcname, line, time);
+#define PRINT_OK printf("%s%s%s [%s] %s (%Lfs)\n", ANSI_COLOR_GREEN, "[      OK ]", ANSI_COLOR_RESET, current_tests, funcname, time);
+#define PRINT_EXPECTED printf("%s  Expected: %d\n  Got: %d%s\n", ANSI_COLOR_RED, expected, retcode, ANSI_COLOR_RESET);
 #define HANDLE_PHASE1 if (first_phase == 1){ \
         total_functions++; \
         int len = strlen(funcname); \
         if (len > max_funcname_len) max_funcname_len = len; \
         return;}
 
-#define EXPECT_FUNC_INT_EQ(func,expected) _Generic((expected), \
+//General EXPECT and ASSERT declaration
+#define EXPECT_EQ(func,expected) _Generic((expected), \
                                         int8_t: expect_func_int8_eq, \
                                         uint8_t: expect_func_uint8_eq, \
                                         int16_t: expect_func_int16_eq, \
@@ -73,7 +75,7 @@
                                         uint32_t: expect_func_uint32_eq, \
                                         int64_t: expect_func_int64_eq, \
                                         uint64_t: expect_func_uint64_eq)(func, #func, expected, __LINE__);
-#define ASSERT_FUNC_INT_EQ(func,expected) _Generic((expected), \
+#define ASSERT_EQ(func,expected) _Generic((expected), \
                                         int8_t: assert_func_int8_eq, \
                                         uint8_t: assert_func_uint8_eq, \
                                         int16_t: assert_func_int16_eq, \
@@ -82,6 +84,11 @@
                                         uint32_t: assert_func_uint32_eq, \
                                         int64_t: assert_func_int64_eq, \
                                         uint64_t: assert_func_uint64_eq)(func, #func, expected, __LINE__);
+
+//Additional functions
+#define SET_TITLE(title) current_tests = title;
+
+//All global fields required by engine
 int total_functions = 0;
 int currentfunction = 1;
 int first_phase = 1;
@@ -91,8 +98,10 @@ int failed = 0;
 int ran = 0;
 int assert_failed = 0;
 long double totaltime = 0;
+char* current_tests = "";
 jmp_buf sigsegv_buf = {0};
 
+//Handler of segmentation fault, required for tests engine stability
 void sigsegv_handler(int s){
     switch (s){
         case SIGSEGV:
@@ -103,6 +112,7 @@ void sigsegv_handler(int s){
 
 void test_main();
 
+//All testing functions
 void expect_func_int8_eq(int8_t (*func)(), char* funcname, int8_t expected, int line){
     EXPECT_FUNC_INT_BODY
 }
@@ -171,6 +181,7 @@ void expect_int8_eq(int8_t result, int8_t expected, char* funcname, int line){
 
 }
 
+//Actual entry point, instead of the fake one
 int main(){
     signal(SIGSEGV, sigsegv_handler);
     total_functions = 0;
@@ -186,6 +197,6 @@ int main(){
     else if (failed == 0) printf(ANSI_COLOR_GREEN);
     else printf(ANSI_COLOR_YELLOW);
     printf("[=========]%s %d tests finished (%Lfs total)\n\n", ANSI_COLOR_RESET, ran, totaltime);
-    printf("%s[ SUCCESS ]%s %d tests.\n", ANSI_COLOR_GREEN, ANSI_COLOR_RESET, successed);
-    printf("%s[ FAILURE ]%s %d tests.\n", ANSI_COLOR_RED, ANSI_COLOR_RESET, failed);
+    if (successed) printf("%s[ SUCCESS ]%s %d tests.\n", ANSI_COLOR_GREEN, ANSI_COLOR_RESET, successed);
+    if (failed) printf("%s[ FAILURE ]%s %d tests.\n", ANSI_COLOR_RED, ANSI_COLOR_RESET, failed);
 }
