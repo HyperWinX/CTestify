@@ -177,10 +177,6 @@ void assert_func_uint64_eq(int (*func)(), char* funcname, int expected, int line
     ASSERT_FUNC_INT_BODY
 }
 
-void expect_int8_eq(int8_t result, int8_t expected, char* funcname, int line){
-
-}
-
 //Actual entry point, instead of the fake one
 int main(){
     signal(SIGSEGV, sigsegv_handler);
