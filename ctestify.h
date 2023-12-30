@@ -14,6 +14,46 @@
 #define MILLISECONDS 2
 #define MICROSECONDS 3
 
+#define EXPECT_FUNC_INT_BODY CHECK_ASSERT_FAILURE \
+    HANDLE_PHASE1 \
+    PRINT_RUN \
+    clock_t start, stop; \
+    int sigsegv = 0, retcode = 0; \
+    short executed = 0; \
+    if (!setjmp(sigsegv_buf)){ \
+        start = clock(); \
+        retcode = (*func)(); \
+        stop = clock(); \
+        executed++; \
+    } else{ stop = clock(); sigsegv++; } \
+    long double time = ((double)(stop - start)) / CLOCKS_PER_SEC; \
+    totaltime += time; \
+    if (!executed && sigsegv) printf("%s%s%s %s:%d (%Lfs)\n", ANSI_COLOR_RED, sigsegv ? "[ SIGSEGV ]" : "[ FAILURE ]", ANSI_COLOR_RESET, funcname, line, time); \
+    else if (retcode == expected){ \
+        printf("%s%s%s %s (%Lfs)\n", ANSI_COLOR_GREEN, "[      OK ]", ANSI_COLOR_RESET, funcname, time); successed++; \
+    } else { \
+        printf("%s  Expected: %d\n  Got: %d%s\n", ANSI_COLOR_RED, expected, retcode, ANSI_COLOR_RESET); failed++;} ran++;
+
+#define ASSERT_FUNC_INT_BODY CHECK_ASSERT_FAILURE \
+    HANDLE_PHASE1 \
+    PRINT_RUN \
+    clock_t start, stop; \
+    int sigsegv = 0, retcode = 0; \
+    short executed = 0; \
+    if (!setjmp(sigsegv_buf)){ \
+        start = clock(); \
+        retcode = (*func)(); \
+        stop = clock(); \
+        executed++; \
+    } else{ stop = clock(); sigsegv++;} \
+    long double time = ((double)(stop - start)) / CLOCKS_PER_SEC; \
+    totaltime += time; \
+    if (!executed && sigsegv){ printf("%s%s%s %s:%d (%Lfs)\n", ANSI_COLOR_RED, sigsegv ? "[ SIGSEGV ]" : "[ FAILURE ]", ANSI_COLOR_RESET, funcname, line, time); failed++; assert_failed++;} \
+    else if (retcode == expected){ \
+        printf("%s%s%s %s (%Lfs)\n", ANSI_COLOR_GREEN, "[      OK ]", ANSI_COLOR_RESET, funcname, time); successed++; \
+    } else { \
+        printf("%s  Expected: %d\n  Got: %d%s\n", ANSI_COLOR_RED, expected, retcode, ANSI_COLOR_RESET); failed++; assert_failed++;} ran++;
+
 #define SPACECOUNT max_funcname_len - strlen(funcname)
 #define OFFSET SPACECOUNT,""
 #define CHECK_ASSERT_FAILURE if (assert_failed) return;
@@ -33,7 +73,15 @@
                                         uint32_t: expect_func_uint32_eq, \
                                         int64_t: expect_func_int64_eq, \
                                         uint64_t: expect_func_uint64_eq)(func, #func, expected, __LINE__);
-#define ASSERT_FUNC_INT_EQ(func,expected) assert_func_int_eq(func,#func,expected,__LINE__);
+#define ASSERT_FUNC_INT_EQ(func,expected) _Generic((expected), \
+                                        int8_t: assert_func_int8_eq, \
+                                        uint8_t: assert_func_uint8_eq, \
+                                        int16_t: assert_func_int16_eq, \
+                                        uint16_t: assert_func_uint16_eq, \
+                                        int32_t: assert_func_int32_eq, \
+                                        uint32_t: assert_func_uint32_eq, \
+                                        int64_t: assert_func_int64_eq, \
+                                        uint64_t: assert_func_uint64_eq)(func, #func, expected, __LINE__);
 int total_functions = 0;
 int currentfunction = 1;
 int first_phase = 1;
@@ -56,255 +104,71 @@ void sigsegv_handler(int s){
 void test_main();
 
 void expect_func_int8_eq(int8_t (*func)(), char* funcname, int8_t expected, int line){
-    CHECK_ASSERT_FAILURE
-    HANDLE_PHASE1
-    PRINT_RUN
-    clock_t start, stop;
-    int sigsegv = 0;
-    int retcode;
-    if (!setjmp(sigsegv_buf)){
-        start = clock();
-        int retcode = (*func)();
-        stop = clock();
-    }
-    else{
-        stop = clock();
-        sigsegv++;
-    }
-    long double time = ((double)(stop - start)) / CLOCKS_PER_SEC;
-    totaltime += time;
-    if (retcode == expected){
-        printf("%s%s%s %s (%Lfs)\n", ANSI_COLOR_GREEN, "[      OK ]", ANSI_COLOR_RESET, funcname, time); successed++;
-    } else {
-        printf("%s%s%s %s:%d (%Lfs)\n", ANSI_COLOR_RED, sigsegv ? "[ SIGSEGV ]" : "[ FAILURE ]", ANSI_COLOR_RESET, funcname, line, time);
-        if (!sigsegv) printf("%s  Expected: %d\n  Got: %d%s\n", ANSI_COLOR_RED, expected, retcode, ANSI_COLOR_RESET);
-        failed++;
-    }
-    ran++;
+    EXPECT_FUNC_INT_BODY
 }
 
 void expect_func_uint8_eq(uint8_t (*func)(), char* funcname, int8_t expected, int line){
-    CHECK_ASSERT_FAILURE
-    HANDLE_PHASE1
-    PRINT_RUN
-    clock_t start, stop;
-    int sigsegv = 0;
-    int retcode;
-    if (!setjmp(sigsegv_buf)){
-        start = clock();
-        int retcode = (*func)();
-        stop = clock();
-    }
-    else{
-        stop = clock();
-        sigsegv++;
-    }
-    long double time = ((double)(stop - start)) / CLOCKS_PER_SEC;
-    totaltime += time;
-    if (retcode == expected){
-        printf("%s%s%s %s (%Lfs)\n", ANSI_COLOR_GREEN, "[      OK ]", ANSI_COLOR_RESET, funcname, time); successed++;
-    } else {
-        printf("%s%s%s %s:%d (%Lfs)\n", ANSI_COLOR_RED, sigsegv ? "[ SIGSEGV ]" : "[ FAILURE ]", ANSI_COLOR_RESET, funcname, line, time);
-        if (!sigsegv) printf("%s  Expected: %d\n  Got: %d%s\n", ANSI_COLOR_RED, expected, retcode, ANSI_COLOR_RESET);
-        failed++;
-    }
-    ran++;
+    EXPECT_FUNC_INT_BODY
 }
 
 void expect_func_int16_eq(int16_t (*func)(), char* funcname, int8_t expected, int line){
-    CHECK_ASSERT_FAILURE
-    HANDLE_PHASE1
-    PRINT_RUN
-    clock_t start, stop;
-    int sigsegv = 0;
-    int retcode;
-    if (!setjmp(sigsegv_buf)){
-        start = clock();
-        int retcode = (*func)();
-        stop = clock();
-    }
-    else{
-        stop = clock();
-        sigsegv++;
-    }
-    long double time = ((double)(stop - start)) / CLOCKS_PER_SEC;
-    totaltime += time;
-    if (retcode == expected){
-        printf("%s%s%s %s (%Lfs)\n", ANSI_COLOR_GREEN, "[      OK ]", ANSI_COLOR_RESET, funcname, time); successed++;
-    } else {
-        printf("%s%s%s %s:%d (%Lfs)\n", ANSI_COLOR_RED, sigsegv ? "[ SIGSEGV ]" : "[ FAILURE ]", ANSI_COLOR_RESET, funcname, line, time);
-        if (!sigsegv) printf("%s  Expected: %d\n  Got: %d%s\n", ANSI_COLOR_RED, expected, retcode, ANSI_COLOR_RESET);
-        failed++;
-    }
-    ran++;
+    EXPECT_FUNC_INT_BODY
 }
 
 void expect_func_uint16_eq(uint16_t (*func)(), char* funcname, int8_t expected, int line){
-    CHECK_ASSERT_FAILURE
-    HANDLE_PHASE1
-    PRINT_RUN
-    clock_t start, stop;
-    int sigsegv = 0;
-    int retcode;
-    if (!setjmp(sigsegv_buf)){
-        start = clock();
-        int retcode = (*func)();
-        stop = clock();
-    }
-    else{
-        stop = clock();
-        sigsegv++;
-    }
-    long double time = ((double)(stop - start)) / CLOCKS_PER_SEC;
-    totaltime += time;
-    if (retcode == expected){
-        printf("%s%s%s %s (%Lfs)\n", ANSI_COLOR_GREEN, "[      OK ]", ANSI_COLOR_RESET, funcname, time); successed++;
-    } else {
-        printf("%s%s%s %s:%d (%Lfs)\n", ANSI_COLOR_RED, sigsegv ? "[ SIGSEGV ]" : "[ FAILURE ]", ANSI_COLOR_RESET, funcname, line, time);
-        if (!sigsegv) printf("%s  Expected: %d\n  Got: %d%s\n", ANSI_COLOR_RED, expected, retcode, ANSI_COLOR_RESET);
-        failed++;
-    }
-    ran++;
+    EXPECT_FUNC_INT_BODY
 }
 
 void expect_func_int32_eq(int32_t (*func)(), char* funcname, int8_t expected, int line){
-    CHECK_ASSERT_FAILURE
-    HANDLE_PHASE1
-    PRINT_RUN
-    clock_t start, stop;
-    int sigsegv = 0;
-    int retcode;
-    if (!setjmp(sigsegv_buf)){
-        start = clock();
-        int retcode = (*func)();
-        stop = clock();
-    }
-    else{
-        stop = clock();
-        sigsegv++;
-    }
-    long double time = ((double)(stop - start)) / CLOCKS_PER_SEC;
-    totaltime += time;
-    if (retcode == expected){
-        printf("%s%s%s %s (%Lfs)\n", ANSI_COLOR_GREEN, "[      OK ]", ANSI_COLOR_RESET, funcname, time); successed++;
-    } else {
-        printf("%s%s%s %s:%d (%Lfs)\n", ANSI_COLOR_RED, sigsegv ? "[ SIGSEGV ]" : "[ FAILURE ]", ANSI_COLOR_RESET, funcname, line, time);
-        if (!sigsegv) printf("%s  Expected: %d\n  Got: %d%s\n", ANSI_COLOR_RED, expected, retcode, ANSI_COLOR_RESET);
-        failed++;
-    }
-    ran++;
+    EXPECT_FUNC_INT_BODY
 }
 
 void expect_func_uint32_eq(uint32_t (*func)(), char* funcname, int8_t expected, int line){
-    CHECK_ASSERT_FAILURE
-    HANDLE_PHASE1
-    PRINT_RUN
-    clock_t start, stop;
-    int sigsegv = 0;
-    int retcode;
-    if (!setjmp(sigsegv_buf)){
-        start = clock();
-        int retcode = (*func)();
-        stop = clock();
-    }
-    else{
-        stop = clock();
-        sigsegv++;
-    }
-    long double time = ((double)(stop - start)) / CLOCKS_PER_SEC;
-    totaltime += time;
-    if (retcode == expected){
-        printf("%s%s%s %s (%Lfs)\n", ANSI_COLOR_GREEN, "[      OK ]", ANSI_COLOR_RESET, funcname, time); successed++;
-    } else {
-        printf("%s%s%s %s:%d (%Lfs)\n", ANSI_COLOR_RED, sigsegv ? "[ SIGSEGV ]" : "[ FAILURE ]", ANSI_COLOR_RESET, funcname, line, time);
-        if (!sigsegv) printf("%s  Expected: %d\n  Got: %d%s\n", ANSI_COLOR_RED, expected, retcode, ANSI_COLOR_RESET);
-        failed++;
-    }
-    ran++;
+    EXPECT_FUNC_INT_BODY
 }
 
 void expect_func_int64_eq(int64_t (*func)(), char* funcname, int8_t expected, int line){
-    CHECK_ASSERT_FAILURE
-    HANDLE_PHASE1
-    PRINT_RUN
-    clock_t start, stop;
-    int sigsegv = 0;
-    int retcode;
-    if (!setjmp(sigsegv_buf)){
-        start = clock();
-        int retcode = (*func)();
-        stop = clock();
-    }
-    else{
-        stop = clock();
-        sigsegv++;
-    }
-    long double time = ((double)(stop - start)) / CLOCKS_PER_SEC;
-    totaltime += time;
-    if (retcode == expected){
-        printf("%s%s%s %s (%Lfs)\n", ANSI_COLOR_GREEN, "[      OK ]", ANSI_COLOR_RESET, funcname, time); successed++;
-    } else {
-        printf("%s%s%s %s:%d (%Lfs)\n", ANSI_COLOR_RED, sigsegv ? "[ SIGSEGV ]" : "[ FAILURE ]", ANSI_COLOR_RESET, funcname, line, time);
-        if (!sigsegv) printf("%s  Expected: %d\n  Got: %d%s\n", ANSI_COLOR_RED, expected, retcode, ANSI_COLOR_RESET);
-        failed++;
-    }
-    ran++;
+    EXPECT_FUNC_INT_BODY
 }
 
 void expect_func_uint64_eq(uint64_t (*func)(), char* funcname, int8_t expected, int line){
-    CHECK_ASSERT_FAILURE
-    HANDLE_PHASE1
-    PRINT_RUN
-    clock_t start, stop;
-    int sigsegv = 0;
-    int retcode;
-    if (!setjmp(sigsegv_buf)){
-        start = clock();
-        int retcode = (*func)();
-        stop = clock();
-    }
-    else{
-        stop = clock();
-        sigsegv++;
-    }
-    long double time = ((double)(stop - start)) / CLOCKS_PER_SEC;
-    totaltime += time;
-    if (retcode == expected){
-        printf("%s%s%s %s (%Lfs)\n", ANSI_COLOR_GREEN, "[      OK ]", ANSI_COLOR_RESET, funcname, time); successed++;
-    } else {
-        printf("%s%s%s %s:%d (%Lfs)\n", ANSI_COLOR_RED, sigsegv ? "[ SIGSEGV ]" : "[ FAILURE ]", ANSI_COLOR_RESET, funcname, line, time);
-        if (!sigsegv) printf("%s  Expected: %d\n  Got: %d%s\n", ANSI_COLOR_RED, expected, retcode, ANSI_COLOR_RESET);
-        failed++;
-    }
-    ran++;
+    EXPECT_FUNC_INT_BODY
 }
 
-void assert_func_int_eq(int (*func)(), char* funcname, int expected, int line){
-    CHECK_ASSERT_FAILURE
-    HANDLE_PHASE1
-    PRINT_RUN
-    clock_t start, stop;
-    int sigsegv = 0;
-    int retcode;
-    if (!setjmp(sigsegv_buf)){
-        start = clock();
-        int retcode = (*func)();
-        stop = clock();
-    }
-    else{
-        stop = clock();
-        sigsegv++;
-    }
-    long double time = ((double)(stop - start)) / CLOCKS_PER_SEC;
-    totaltime += time;
-    if (retcode == expected){
-        printf("%s%s%s %s (%Lfs)\n", ANSI_COLOR_GREEN, "[      OK ]", ANSI_COLOR_RESET, funcname, time); successed++;
-    } else {
-        printf("%s%s%s %s:%d (%Lfs)\n", ANSI_COLOR_RED, sigsegv ? "[ SIGSEGV ]" : "[ FAILURE ]", ANSI_COLOR_RESET, funcname, line, time);
-        if (!sigsegv) printf("%s  Expected: %d\n  Got: %d%s\n", ANSI_COLOR_RED, expected, retcode, ANSI_COLOR_RESET);
-        failed++; assert_failed++;
-    }
-    ran++;
+void assert_func_int8_eq(int (*func)(), char* funcname, int expected, int line){
+    ASSERT_FUNC_INT_BODY
+}
+
+void assert_func_uint8_eq(int (*func)(), char* funcname, int expected, int line){
+    ASSERT_FUNC_INT_BODY
+}
+
+void assert_func_int16_eq(int (*func)(), char* funcname, int expected, int line){
+    ASSERT_FUNC_INT_BODY
+}
+
+void assert_func_uint16_eq(int (*func)(), char* funcname, int expected, int line){
+    ASSERT_FUNC_INT_BODY
+}
+
+void assert_func_int32_eq(int (*func)(), char* funcname, int expected, int line){
+    ASSERT_FUNC_INT_BODY
+}
+
+void assert_func_uint32_eq(int (*func)(), char* funcname, int expected, int line){
+    ASSERT_FUNC_INT_BODY
+}
+
+void assert_func_int64_eq(int (*func)(), char* funcname, int expected, int line){
+    ASSERT_FUNC_INT_BODY
+}
+
+void assert_func_uint64_eq(int (*func)(), char* funcname, int expected, int line){
+    ASSERT_FUNC_INT_BODY
+}
+
+void expect_int8_eq(int8_t result, int8_t expected, char* funcname, int line){
+
 }
 
 int main(){
@@ -316,7 +180,7 @@ int main(){
         return 0;
     }
     first_phase = 0;
-    printf("%s[=========]%s Running %d tests\n", ANSI_COLOR_GREEN, ANSI_COLOR_RESET, total_functions, totaltime);
+    printf("%s[=========]%s Running %d tests\n", ANSI_COLOR_GREEN, ANSI_COLOR_RESET, total_functions);
     test_main();
     if (successed == 0) printf(ANSI_COLOR_RED);
     else if (failed == 0) printf(ANSI_COLOR_GREEN);
