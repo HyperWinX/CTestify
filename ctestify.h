@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <signal.h>
 #include <setjmp.h>
+#include <stdbool.h>
 
 //Colors ANSI escape sequences
 #define ANSI_COLOR_RED     "\x1b[31m"
@@ -75,6 +76,15 @@
                                         uint32_t: expect_func_uint32_eq, \
                                         int64_t: expect_func_int64_eq, \
                                         uint64_t: expect_func_uint64_eq)(func, #func, expected, __LINE__);
+#define EXPECT_TRUE(func) _Generic((func), \
+                                           int8_t: expect_true_func_int8, \
+                                           uint8_t: expect_true_func_uint8, \
+                                           int16_t: expect_true_func_int16, \
+                                            uint16_t: expect_true_func_uint16, \
+                                            int32_t: expect_true_func_int32, \
+                                            uint32_t: expect_true_func_uint32, \
+                                            int64_t: expect_true_func_int64, \
+                                            uint64_t: expect_true_func_uint64)(func, #func, __LINE__);
 #define ASSERT_EQ(func,expected) _Generic((expected), \
                                         int8_t: assert_func_int8_eq, \
                                         uint8_t: assert_func_uint8_eq, \
@@ -84,9 +94,22 @@
                                         uint32_t: assert_func_uint32_eq, \
                                         int64_t: assert_func_int64_eq, \
                                         uint64_t: assert_func_uint64_eq)(func, #func, expected, __LINE__);
-
 //Additional functions
+#define SETRETURN setjmp(sigsegv_buf)
+#define START_CRITICAL_FUNCTION_TEST(func) char* funcname = (char*)func; int line = __LINE__; int sigsegv = 0; time_t start, stop; if (SETRETURN){PROCESS_SEGV failed++; FATAL_TEST} \
+                                          else { if (first_phase){ total_functions++; return;} else { PRINT_START(#func) start = clock()
+#define END_CRITICAL_FUNCTION_TEST } } stop = clock(); long double time = ((double)(stop - start)) / CLOCKS_PER_SEC; \
+                                    totaltime += time; HANDLE_FUNCTION_TEST ran++;
+#define START_FUNCTION_TEST(func) char* funcname = (char*)func; int line = __LINE__; int sigsegv = 0; time_t start, stop; if (SETRETURN){PROCESS_SEGV failed++;} \
+                                          else { if (first_phase){ total_functions++; return;} else { PRINT_START(#func) start = clock()
+#define END_FUNCTION_TEST } } stop = clock(); long double time = ((double)(stop - start)) / CLOCKS_PER_SEC; \
+                                    totaltime += time; HANDLE_FUNCTION_TEST ran++;
+#define PROCESS_SEGV failed++; sigsegv++;
+#define FATAL_TEST assert_failed++;
+#define PRINT_START(func) print_start(#func);
+#define HANDLE_FUNCTION_TEST if (!sigsegv) {PRINT_OK successed++;} else {PRINT_SIGSEGV return;}
 #define SET_TITLE(title) current_tests = title;
+#define SET_SECTION(name) printf(ANSI_COLOR_GREEN "\n[%s]%s\n\n", name, ANSI_COLOR_RESET);
 
 //All global fields required by engine
 int total_functions = 0;
@@ -113,6 +136,15 @@ void sigsegv_handler(int s){
 void test_main();
 
 //All testing functions
+
+void print_start(char* funcname){
+    PRINT_RUN
+}
+
+void handle_function_test(char* funcname, int32_t line){
+
+}
+
 void expect_func_int8_eq(int8_t (*func)(), char* funcname, int8_t expected, int line){
     EXPECT_FUNC_INT_BODY
 }
