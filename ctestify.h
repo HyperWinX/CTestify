@@ -59,7 +59,7 @@
 #define PRINT_RUN printf("%s%s%s [%s] %s\n", ANSI_COLOR_GREEN, "[ RUN     ]", ANSI_COLOR_RESET, current_tests, funcname);
 #define PRINT_SIGSEGV printf("%s%s%s [%s] %s:%d (%Lfs)\n", ANSI_COLOR_RED, sigsegv ? "[ SIGSEGV ]" : "[ FAILURE ]", ANSI_COLOR_RESET, current_tests, funcname, line, time);
 #define PRINT_OK printf("%s%s%s [%s] %s (%Lfs)\n", ANSI_COLOR_GREEN, "[      OK ]", ANSI_COLOR_RESET, current_tests, funcname, time);
-#define PRINT_EXPECTED printf("%s  Expected: %d\n  Got: %d%s\n", ANSI_COLOR_RED, expected, retcode, ANSI_COLOR_RESET);
+#define PRINT_EXPECTED printf("%s  Expected: %ld\n  Got: %d%s\n", ANSI_COLOR_RED, expected, retcode, ANSI_COLOR_RESET);
 #define HANDLE_PHASE1 if (first_phase == 1){ \
         total_functions++; \
         int len = strlen(funcname); \
@@ -67,8 +67,8 @@
         return;}
 
 //General EXPECT and ASSERT declaration
-#define EXPECT_EQ_SIGNED(func,expected) expect_func_signed_eq((int64_t (*func)())func, #func, (int64_t)expected, __LINE__);
-#define EXPECT_EQ_UNSIGNED(func,expected) expect_func_unsigned_eq((uint64_t (*func)())func, #func, (uint64_t)expected, __LINE__);
+#define EXPECT_EQ_SIGNED(func,expected) expect_func_signed_eq((int64_t (*)())func, #func, (int64_t)expected, __LINE__);
+#define EXPECT_EQ_UNSIGNED(func,expected) expect_func_unsigned_eq((uint64_t (*)())func, #func, (uint64_t)expected, __LINE__);
 
 #define EXPECT_TRUE(func) _Generic((func), \
                                            int8_t: expect_true_func_int8, \
@@ -79,19 +79,22 @@
                                             uint32_t: expect_true_func_uint32, \
                                             int64_t: expect_true_func_int64, \
                                             uint64_t: expect_true_func_uint64)(func, #func, __LINE__);
-#define ASSERT_EQ_SIGNED(func,expected) assert_func_signed_eq((int64_t (*func)())func, #func, (int64_t)expected, __LINE__);
-#define ASSERT_EQ_UNSIGNED(func,expected) assert_func_unsigned_eq((uint64_t (*func)())func, #func, (uint64_t)expected, __LINE__);
+#define ASSERT_EQ_SIGNED(func,expected) assert_func_signed_eq((int64_t (*)())func, #func, (int64_t)expected, __LINE__);
+#define ASSERT_EQ_UNSIGNED(func,expected) assert_func_unsigned_eq((uint64_t (*)())func, #func, (uint64_t)expected, __LINE__);
 
 //Additional functions
+#define INIT() char* funcname = ""; int line = 0; int sigsegv = 0; time_t start = {0}; time_t stop = {0}; long double time = {0};
 #define SETRETURN setjmp(sigsegv_buf)
-#define START_CRITICAL_FUNCTION_TEST(func) char* funcname = (char*)func; int line = __LINE__; int sigsegv = 0; time_t start, stop; if (SETRETURN){PROCESS_SEGV failed++; FATAL_TEST} \
-                                          else { if (first_phase){ total_functions++; return;} else { PRINT_START(#func) start = clock()
-#define END_CRITICAL_FUNCTION_TEST } } stop = clock(); long double time = ((double)(stop - start)) / CLOCKS_PER_SEC; \
-                                    totaltime += time; HANDLE_FUNCTION_TEST ran++;
-#define START_FUNCTION_TEST(func) char* funcname = (char*)func; int line = __LINE__; int sigsegv = 0; time_t start, stop; if (SETRETURN){PROCESS_SEGV failed++;} \
-                                          else { if (first_phase){ total_functions++; return;} else { PRINT_START(#func) start = clock()
-#define END_FUNCTION_TEST } } stop = clock(); long double time = ((double)(stop - start)) / CLOCKS_PER_SEC; \
-                                    totaltime += time; HANDLE_FUNCTION_TEST ran++;
+#define START_CRITICAL_FUNCTION_TEST(func) funcname = #func; line = __LINE__; if (SETRETURN){PROCESS_SEGV failed++; FATAL_TEST} \
+                                          else { if (first_phase){ total_functions++; return;} else { PRINT_START(funcname) start = clock()
+#define END_CRITICAL_FUNCTION_TEST } } stop = clock(); time = ((double)(stop - start)) / CLOCKS_PER_SEC; \
+                                    totaltime += time; HANDLE_FUNCTION_TEST ran++;                          \
+                                    line = 0; sigsegv = 0;
+#define START_FUNCTION_TEST(func) funcname = #func; line = __LINE__; if (SETRETURN){PROCESS_SEGV failed++;} \
+                                          else { if (first_phase){ total_functions++; return;} else { PRINT_START(funcname) start = clock()
+#define END_FUNCTION_TEST } } stop = clock(); time = ((double)(stop - start)) / CLOCKS_PER_SEC; \
+                                    totaltime += time; HANDLE_FUNCTION_TEST ran++;                          \
+                                    line = 0; sigsegv = 0;
 #define PROCESS_SEGV failed++; sigsegv++;
 #define FATAL_TEST assert_failed++;
 #define PRINT_START(func) print_start(#func);
