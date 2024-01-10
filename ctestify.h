@@ -67,8 +67,8 @@
         return;}
 
 //General EXPECT and ASSERT declaration
-#define EXPECT_EQ_SIGNED(func,expected) expect_func_signed_eq((int64_t (*func)())func, #func, (int64_t)expected, __LINE__);
-#define EXPECT_EQ_UNSIGNED(func,expected) expect_func_unsigned_eq((uint64_t (*func)())func, #func, (uint64_t)expected, __LINE__);
+#define EXPECT_EQ_SIGNED(func,expected) expect_func_signed_eq((int64_t (*)())func, #func, (int64_t)expected, __LINE__);
+#define EXPECT_EQ_UNSIGNED(func,expected) expect_func_unsigned_eq((uint64_t (*)())func, #func, (uint64_t)expected, __LINE__);
 
 #define EXPECT_TRUE(func) _Generic((func), \
                                            int8_t: expect_true_func_int8, \
@@ -79,8 +79,8 @@
                                             uint32_t: expect_true_func_uint32, \
                                             int64_t: expect_true_func_int64, \
                                             uint64_t: expect_true_func_uint64)(func, #func, __LINE__);
-#define ASSERT_EQ_SIGNED(func,expected) assert_func_signed_eq((int64_t (*func)())func, #func, (int64_t)expected, __LINE__);
-#define ASSERT_EQ_UNSIGNED(func,expected) assert_func_unsigned_eq((uint64_t (*func)())func, #func, (uint64_t)expected, __LINE__);
+#define ASSERT_EQ_SIGNED(func,expected) assert_func_signed_eq((int64_t (*)())func, #func, (int64_t)expected, __LINE__);
+#define ASSERT_EQ_UNSIGNED(func,expected) assert_func_unsigned_eq((uint64_t (*)())func, #func, (uint64_t)expected, __LINE__);
 
 //Additional functions
 #define SETRETURN setjmp(sigsegv_buf)
