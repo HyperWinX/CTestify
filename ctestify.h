@@ -5,12 +5,14 @@
 #include <signal.h>
 #include <setjmp.h>
 #include <stdbool.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 //Colors ANSI escape sequences
-#define ANSI_COLOR_RED     "\x1b[31m"
-#define ANSI_COLOR_GREEN   "\x1b[32m"
-#define ANSI_COLOR_YELLOW  "\x1b[33m"
-#define ANSI_COLOR_RESET   "\x1b[0m"
+#define CRED     "\x1b[31m"
+#define CGREEN   "\x1b[32m"
+#define CYELLOW  "\x1b[33m"
+#define CRESET   "\x1b[0m"
 
 //All global fields required by engine
 int total_functions = 0;
@@ -97,11 +99,16 @@ int double_comparer(double arg1, double arg2){
 #define DEFAULT_BODY if(assert_failed) return; \
     if (strlen(testname) <= 1 || strlen(current_test_suite) <= 1){ \
         printf("Test name or test suite name can't be null!\n");assert_failed++;return;} \
-	printf("%s%s%s %s.%s\n", ANSI_COLOR_GREEN, "[ RUN     ]", ANSI_COLOR_RESET, current_test_suite, testname); \
+	printf("%s%s%s %s.%s\n", CGREEN, "[ RUN     ]", CRESET, current_test_suite, testname); \
     if (comparerresult){ \
-        printf("%s%s%s %s.%s\n", ANSI_COLOR_GREEN, "[      OK ]", ANSI_COLOR_RESET, current_test_suite, testname); \
+        printf("%s%s%s %s.%s\n", CGREEN, "[      OK ]", CRESET, current_test_suite, testname); \
         successed++;}else{ \
-        printf("%s%s%s %s.%s\n", ANSI_COLOR_RED, "[ FAILURE ]", ANSI_COLOR_RESET, current_test_suite, testname); \
+        printf("%s%s%s %s.%s\n", CRED, "[ FAILURE ]", CRESET, current_test_suite, testname); \
+        char buf[256] = {0}; \
+        int msg_avail = 0; \
+        if (strlen(errmsg) > 1){ \
+            snprintf(buf, sizeof(buf), "\t%s\n", errmsg); \
+            msg_avail = 1;} \
         switch(comparerret.mode){ \
             case SignedInt:{PRINT_EXPECTED_SIGNED break;} \
             case UnsignedInt:{PRINT_EXPECTED_UNSIGNED break;} \
@@ -114,12 +121,12 @@ int double_comparer(double arg1, double arg2){
 #define OFFSET SPACECOUNT,""
 #define CHECK_ASSERT_FAILURE if (assert_failed) return;
 #define RESET_COMPARERRET comparerret.args.intargs[0] = 0; comparerret.args.intargs[1] = 0; comparerret.mode = 0;
-#define PRINT_RUN printf("%s%s%s [%s] %s\n", ANSI_COLOR_GREEN, "[ RUN     ]", ANSI_COLOR_RESET, current_tests, funcname);
-#define PRINT_EXPECTED_SIGNED printf("\t%s: %ld (0x%lx)\n\tExpected: %ld (0x%lx)\n", firstarg, comparerret.args.intargs[0], comparerret.args.intargs[0], comparerret.args.intargs[1], comparerret.args.intargs[1]);
-#define PRINT_EXPECTED_UNSIGNED printf("\t%s: %lu (0x%lx)\n\tExpected: %lu (0x%lx)\n", firstarg, comparerret.args.uintargs[0], comparerret.args.uintargs[0], comparerret.args.uintargs[1], comparerret.args.uintargs[1]);
-#define PRINT_EXPECTED_FLOAT printf("\t%s: %f (0x%lx)\n\tExpected: %f (0x%x)\n", firstarg, comparerret.args.floatargs[0], comparerret.args.floatargs[0], comparerret.args.floatargs[1], comparerret.args.floatargs[1]);
-#define PRINT_EXPECTED_DOUBLE printf("\t%s: %lf (0x%lx)\n\tExpected: %lf (0x%lx)\n", firstarg, comparerret.args.doubleargs[0], comparerret.args.doubleargs[0], comparerret.args.doubleargs[1], comparerret.args.doubleargs[1]);
-#define PRINT_EXPECTED_CHARP printf("\t%s: %s (0x%lx)\n\tExpected: %s (0x%lx)\n", firstarg, comparerret.args.charpargs[0], comparerret.args.charpargs[0], comparerret.args.charpargs[1], comparerret.args.charpargs[1]);
+#define PRINT_RUN printf("%s%s%s [%s] %s\n", CGREEN, "[ RUN     ]", CRESET, current_tests, funcname);
+#define PRINT_EXPECTED_SIGNED printf("\t%sActual value of %s: %ld (0x%lx)\n\tExpected: %ld (0x%lx)\n", msg_avail ? buf : "", firstarg, comparerret.args.intargs[0], comparerret.args.intargs[0], comparerret.args.intargs[1], comparerret.args.intargs[1]);
+#define PRINT_EXPECTED_UNSIGNED printf("\t%sActual value of %s: %lu (0x%lx)\n\tExpected: %lu (0x%lx)\n", msg_avail ? buf : "", firstarg, comparerret.args.uintargs[0], comparerret.args.uintargs[0], comparerret.args.uintargs[1], comparerret.args.uintargs[1]);
+#define PRINT_EXPECTED_FLOAT printf("\t%sActual value of %s: %f (0x%a)\n\tExpected: %f (0x%a)\n", msg_avail ? buf : "", firstarg, comparerret.args.floatargs[0], comparerret.args.floatargs[0], comparerret.args.floatargs[1], comparerret.args.floatargs[1]);
+#define PRINT_EXPECTED_DOUBLE printf("\t%sActual value of %s: %lf (0x%a)\n\tExpected: %lf (0x%a)\n", msg_avail ? buf : "", firstarg, comparerret.args.doubleargs[0], comparerret.args.doubleargs[0], comparerret.args.doubleargs[1], comparerret.args.doubleargs[1]);
+#define PRINT_EXPECTED_CHARP printf("\t%sActual value of %s: %s (0x%p)\n\tExpected: %s (0x%p)\n", msg_avail ? buf : "", firstarg, comparerret.args.charpargs[0], comparerret.args.charpargs[0], comparerret.args.charpargs[1], comparerret.args.charpargs[1]);
 
 
 //General EXPECT and ASSERT declaration
@@ -155,10 +162,10 @@ void test_main();
 int TestingEnvironmentSetUp();
 int TestingEnvironmentDestroy();
 
-#ifndef TESTINGENVCON
-#define TESTINGENVCON
-int TestingEnvironmentSetUp(){}
-int TestingEnvironmentDestroy(){}
+#ifndef TESTINGENVCTL
+#define TESTINGENVCTL
+int TestingEnvironmentSetUp(){return 0;}
+int TestingEnvironmentDestroy(){return 0;}
 #endif
 
 //All testing functions
@@ -171,36 +178,46 @@ void expect_equals(char* errmsg, int32_t line, int comparerresult, char* firstar
 void assert_equals(char* errmsg, int32_t line, int comparerresult, char* firstarg, char* secondarg, char* testname){
     DEFAULT_BODY
     if (!comparerresult) assert_failed++;
-    RESET_COMPARERET
+    RESET_COMPARERRET
 }
 
 //Actual entry point, instead of the fake one
 int main(){
     // Testing environment setup
-    printf("%s[=========]%s Setting up testing environment...\n\n", ANSI_COLOR_GREEN, ANSI_COLOR_RESET);
+    printf("%s[=========]%s Setting up testing environment...\n\n", CGREEN, CRESET);
     signal(SIGSEGV, sigsegv_handler);
     total_functions = 0;
     time_t start, end;
+    int stdout_backup = dup(fileno(stdout));
+    int dev_null_fd = open("/dev/null", O_WRONLY);
+    dup2(dev_null_fd, fileno(stdout));
+    close(dev_null_fd);
     test_main();
+    dup2(stdout_backup, fileno(stdout));
+    close(stdout_backup);
     if (total_functions == 0){
-        printf(ANSI_COLOR_RED "No tests detected!\n" ANSI_COLOR_RESET);
+        printf(CRED "No tests detected!\n" CRESET);
         return 0;
     }
     firstphase = 0;
-    TestingEnvironmentSetUp();
+    if (TestingEnvironmentSetUp()){
+        printf(CRED "Environment setup failure!\n" CRESET);
+        return 1;
+    }
     // Running tests
-    printf("%s[=========]%s Running %d tests\n", ANSI_COLOR_GREEN, ANSI_COLOR_RESET, total_functions);
+    printf("%s[=========]%s Running %d tests\n", CGREEN, CRESET, total_functions);
     start = clock();
     test_main();
     end = clock();
     // Tests finalization, print results and destroy testing environment
     long double total_time = ((double)(end - start)) / CLOCKS_PER_SEC;
-    if (successed == 0) printf(ANSI_COLOR_RED);
-    else if (failed == 0) printf(ANSI_COLOR_GREEN);
-    else printf(ANSI_COLOR_YELLOW);
-    printf("[=========]%s %d tests finished (%Lfs total)\n\n", ANSI_COLOR_RESET, ran, total_time);
-    printf("%s[=========]%s Destroying testing environment...\n", ANSI_COLOR_GREEN, ANSI_COLOR_RESET);
-    TestingEnvironmentDestroy();
-    if (successed) printf("%s[ SUCCESS ]%s %d tests.\n", ANSI_COLOR_GREEN, ANSI_COLOR_RESET, successed);
-    if (failed) printf("%s[ FAILURE ]%s %d tests.\n", ANSI_COLOR_RED, ANSI_COLOR_RESET, failed);
+    if (successed == 0) printf(CRED);
+    else if (failed == 0) printf(CGREEN);
+    else printf(CYELLOW);
+    printf("[=========]%s %d tests finished (%Lfs total)\n\n", CRESET, ran, total_time);
+    printf("%s[=========]%s Destroying testing environment...\n", CGREEN, CRESET);
+    if (TestingEnvironmentDestroy())
+        printf(CRED "Testing environment destroy failure!\n" CRESET);
+    if (successed) printf("%s[ SUCCESS ]%s %d tests.\n", CGREEN, CRESET, successed);
+    if (failed) printf("%s[ FAILURE ]%s %d tests.\n", CRED, CRESET, failed);
 }
