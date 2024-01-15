@@ -93,6 +93,22 @@ int double_comparer(double arg1, double arg2){
     return arg1 == arg2;
 }
 
+//Function bodies
+#define DEFAULT_BODY if(assert_failed) return; \
+    if (strlen(testname) <= 1 || strlen(current_test_suite) <= 1){ \
+        printf("Test name or test suite name can't be null!\n");assert_failed++;return;} \
+	printf("%s%s%s %s.%s\n", ANSI_COLOR_GREEN, "[ RUN     ]", ANSI_COLOR_RESET, current_test_suite, testname); \
+    if (comparerresult){ \
+        printf("%s%s%s %s.%s\n", ANSI_COLOR_GREEN, "[      OK ]", ANSI_COLOR_RESET, current_test_suite, testname); \
+        successed++;}else{ \
+        printf("%s%s%s %s.%s\n", ANSI_COLOR_RED, "[ FAILURE ]", ANSI_COLOR_RESET, current_test_suite, testname); \
+        switch(comparerret.mode){ \
+            case SignedInt:{PRINT_EXPECTED_SIGNED break;} \
+            case UnsignedInt:{PRINT_EXPECTED_UNSIGNED break;} \
+            case Float:{PRINT_EXPECTED_FLOAT break;} \
+            case Double:{PRINT_EXPECTED_DOUBLE break;} \
+            case CharPointer:{PRINT_EXPECTED_CHARP break;}}failed++;}ran++;
+
 //Small macroses for more easy functions structure, automatizing routines
 #define SPACECOUNT max_funcname_len - strlen(funcname)
 #define OFFSET SPACECOUNT,""
@@ -107,24 +123,24 @@ int double_comparer(double arg1, double arg2){
 
 
 //General EXPECT and ASSERT declaration
-#define EXPECT_EQ(test_name, value, expected) if (firstphase) total_functions++; else expect_equals("", __LINE__, COMPARER(value, expected), #value, #expected, test_name)
-#define ASSERT_EQ(test_name, value, expected) if (firstphase) total_functions++; else assert_equals("", __LINE__, COMPARER(value, expected), #value, #expected, test_name)
-#define EXPECT_EQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else expect_equals(errmsg, __LINE__, COMPARER(value, expected), #value, #expected, test_name)
-#define ASSERT_EQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else assert_equals(errmsg, __LINE__, COMPARER(value, expected), #value, #expected, test_name)
+#define EXPECT_EQ(test_name, value, expected) if (firstphase) total_functions++; else expect_equals("", __LINE__, COMPARER(value, expected), #value, #expected, #test_name)
+#define ASSERT_EQ(test_name, value, expected) if (firstphase) total_functions++; else assert_equals("", __LINE__, COMPARER(value, expected), #value, #expected, #test_name)
+#define EXPECT_EQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else expect_equals(errmsg, __LINE__, COMPARER(value, expected), #value, #expected, #test_name)
+#define ASSERT_EQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else assert_equals(errmsg, __LINE__, COMPARER(value, expected), #value, #expected, #test_name)
 
-#define EXPECT_TRUE(test_name, val) if (firstphase) total_functions++; else expect_equals("", __LINE__, val > 0, #val, "", test_name)
-#define ASSERT_TRUE(test_name, val) if (firstphase) total_functions++; else assert_equals("", __LINE__, val > 0, #val, "", test_name)
-#define EXPECT_TRUEM(test_name, val, errmsg) if (firstphase) total_functions++; else expect_equals(errmsg, __LINE__, val > 0, #val, "", test_name)
-#define ASSERT_TRUEM(test_name, val, errmsg) if (firstphase) total_functions++; else assert_equals(errmsg, __LINE__, val > 0, #val, "", test_name)
+#define EXPECT_TRUE(test_name, val) if (firstphase) total_functions++; else expect_equals("", __LINE__, val > 0, #val, "", #test_name)
+#define ASSERT_TRUE(test_name, val) if (firstphase) total_functions++; else assert_equals("", __LINE__, val > 0, #val, "", #test_name)
+#define EXPECT_TRUEM(test_name, val, errmsg) if (firstphase) total_functions++; else expect_equals(errmsg, __LINE__, val > 0, #val, "", #test_name)
+#define ASSERT_TRUEM(test_name, val, errmsg) if (firstphase) total_functions++; else assert_equals(errmsg, __LINE__, val > 0, #val, "", #test_name)
 
-#define EXPECT_FALSE(test_name, val) if (firstphase) total_functions++; else expect_equals("", __LINE__, val == 0, #val, "", test_name)
-#define ASSERT_FALSE(test_name, val) if (firstphase) total_functions++; else expect_equals("", __LINE__, val == 0, #val, "", test_name)
-#define EXPECT_FALSEM(test_name, val, errmsg) if (firstphase) total_functions++; else expect_equals(errmsg, __LINE__, val == 0, #val, "", test_name)
-#define ASSERT_FALSEM(test_name, val, errmsg) if (firstphase) total_functions++; else expect_equals(errmsg, __LINE__, val == 0, #val, "", test_name)
+#define EXPECT_FALSE(test_name, val) if (firstphase) total_functions++; else expect_equals("", __LINE__, val == 0, #val, "", #test_name)
+#define ASSERT_FALSE(test_name, val) if (firstphase) total_functions++; else expect_equals("", __LINE__, val == 0, #val, "", #test_name)
+#define EXPECT_FALSEM(test_name, val, errmsg) if (firstphase) total_functions++; else expect_equals(errmsg, __LINE__, val == 0, #val, "", #test_name)
+#define ASSERT_FALSEM(test_name, val, errmsg) if (firstphase) total_functions++; else expect_equals(errmsg, __LINE__, val == 0, #val, "", #test_name)
 
 //Additional functions
 #define PRINT_START(func) print_start(#func);
-#define SET_TEST_SUITE_NAME(name) current_test_suite = name;
+#define SET_TEST_SUITE_NAME(name) current_test_suite = #name;
 
 //Handler of segmentation fault, required for tests engine stability
 void sigsegv_handler(int s){
@@ -139,63 +155,23 @@ void test_main();
 int TestingEnvironmentSetUp();
 int TestingEnvironmentDestroy();
 
+#ifndef TESTINGENVCON
+#define TESTINGENVCON
+int TestingEnvironmentSetUp(){}
+int TestingEnvironmentDestroy(){}
+#endif
+
 //All testing functions
 
-void expect_equals(char* errmsg, int32_t line, int compareresult, char* firstarg, char* secondarg, char* testname){
-    if(assert_failed) return;
-    if (strlen(testname) <= 1 || strlen(current_test_suite) <= 1){
-        printf("Test name or test suite name can't be null!\n");
-        assert_failed++;
-        return;
-    }
-	printf("%s%s%s %s.%s\n", ANSI_COLOR_GREEN, "[ RUN     ]", ANSI_COLOR_RESET, current_test_suite, testname);
-    if (compareresult){
-        printf("%s%s%s %s.%s\n", ANSI_COLOR_GREEN, "[      OK ]", ANSI_COLOR_RESET, current_test_suite, testname);
-        successed++;
-    }
-    else{
-        printf("%s%s%s %s.%s\n", ANSI_COLOR_RED, "[ FAILURE ]", ANSI_COLOR_RESET, current_test_suite, testname);
-        switch(comparerret.mode){
-            case SignedInt:{
-                printf("\t%s: %ld (0x%lx)\n\tExpected: %ld (0x%lx)\n", firstarg, comparerret.args.intargs[0], comparerret.args.intargs[0],
-                       comparerret.args.intargs[1],
-                       comparerret.args.intargs[1]);
-                break;
-            }
-            case UnsignedInt:{
-                printf("\t%s: %lu (0x%lx)\n\tExpected: %lu (0x%lx)\n", firstarg, comparerret.args.uintargs[0], comparerret.args.uintargs[0],
-                       comparerret.args.uintargs[1],
-                       comparerret.args.uintargs[1]);
-                break;
-            }
-            case Float:{
-                printf("\t%s: %f (0x%lx)\n\tExpected: %f (0x%lx)\n", firstarg, comparerret.args.floatargs[0], comparerret.args.floatargs[0],
-                       comparerret.args.floatargs[1],
-                       comparerret.args.floatargs[1]);
-                break;
-            }
-            case Double:{
-                printf("\t%s: %f (0x%lx)\n\tExpected: %f (0x%lx)\n", firstarg, comparerret.args.floatargs[0], comparerret.args.floatargs[0],
-                       comparerret.args.floatargs[1],
-                       comparerret.args.floatargs[1]);
-                break;
-            }
-            case CharPointer:{
-
-            }
-            default:{
-                printf("bruh wtf\n");
-                break;
-            }
-        }
-        failed++;
-    }
-    ran++;
+void expect_equals(char* errmsg, int32_t line, int comparerresult, char* firstarg, char* secondarg, char* testname){
+    DEFAULT_BODY
     RESET_COMPARERRET
 }
 
-void assert_equals(char* errmsg, int32_t line, int compareresult, char* firstarg, char* secondarg, char* testname){
-    
+void assert_equals(char* errmsg, int32_t line, int comparerresult, char* firstarg, char* secondarg, char* testname){
+    DEFAULT_BODY
+    if (!comparerresult) assert_failed++;
+    RESET_COMPARERET
 }
 
 //Actual entry point, instead of the fake one
