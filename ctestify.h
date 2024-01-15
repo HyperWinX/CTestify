@@ -12,6 +12,35 @@
 #define ANSI_COLOR_YELLOW  "\x1b[33m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
 
+//Comparers
+#define COMPARER(arg1, arg2) _Generic((arg1), \
+		int8_t: signed_int_comparer, \
+		int16_t: signed_int_comparer, \
+		int32_t: signed_int_comparer, \
+		int64_t: signed_int_comparer, \
+		char: signed_int_comparer, \
+		short: signed_int_comparer, \
+		int: signed_int_comparer, \
+		long: signed_int_comparer, \
+		uint8_t: unsigned_int_comparer, \
+		uint16_t: unsigned_int_comparer, \
+		uint32_t: unsigned_int_comparer, \
+		uint64_t: unsigned_int_comparer, \
+		unsigned char: unsigned_int_comparer, \
+		unsigned short: unsigned_int_comparer, \
+		unsigned int: unsigned_int_comparer, \
+		unsigned long: unsigned_int_comparer, \
+		char*: str_comparer, \
+		float: float_comparer, \
+		double: double_comparer)(arg1, arg2)
+
+int signed_int_comparer(int64_t arg1, int64_t arg2){return arg1 == arg2;}
+int unsigned_int_comparer(uint64_t arg1, uint64_t arg2){return arg1 == arg2;}
+int str_comparer(char* arg1, char* arg2){return !strcmp(arg1, arg2);}
+int float_comparer(float arg1, float arg2){return arg1 == arg2;}
+int double_comparer(double arg1, double arg2){return arg1 == arg2;}
+
+
 //Function bodies
 #define EXPECT_FUNC_INT_BODY CHECK_ASSERT_FAILURE \
     HANDLE_PHASE1 \
