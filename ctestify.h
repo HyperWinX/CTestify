@@ -12,6 +12,35 @@
 #define ANSI_COLOR_YELLOW  "\x1b[33m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
 
+//Comparers
+#define COMPARER(arg1, arg2) _Generic((arg1), \
+		int8_t: signed_int_comparer, \
+		int16_t: signed_int_comparer, \
+		int32_t: signed_int_comparer, \
+		int64_t: signed_int_comparer, \
+		char: signed_int_comparer, \
+		short: signed_int_comparer, \
+		int: signed_int_comparer, \
+		long: signed_int_comparer, \
+		uint8_t: unsigned_int_comparer, \
+		uint16_t: unsigned_int_comparer, \
+		uint32_t: unsigned_int_comparer, \
+		uint64_t: unsigned_int_comparer, \
+		unsigned char: unsigned_int_comparer, \
+		unsigned short: unsigned_int_comparer, \
+		unsigned int: unsigned_int_comparer, \
+		unsigned long: unsigned_int_comparer, \
+		char*: str_comparer, \
+		float: float_comparer, \
+		double: double_comparer)(arg1, arg2)
+
+int signed_int_comparer(int64_t arg1, int64_t arg2){return arg1 == arg2;}
+int unsigned_int_comparer(uint64_t arg1, uint64_t arg2){return arg1 == arg2;}
+int str_comparer(char* arg1, char* arg2){return !strcmp(arg1, arg2);}
+int float_comparer(float arg1, float arg2){return arg1 == arg2;}
+int double_comparer(double arg1, double arg2){return arg1 == arg2;}
+
+
 //Function bodies
 #define EXPECT_FUNC_INT_BODY CHECK_ASSERT_FAILURE \
     HANDLE_PHASE1 \
@@ -67,15 +96,9 @@
         return;}
 
 //General EXPECT and ASSERT declaration
-#define EXPECT_EQ(func,expected) _Generic((expected), \
-                                        int8_t: expect_func_int8_eq, \
-                                        uint8_t: expect_func_uint8_eq, \
-                                        int16_t: expect_func_int16_eq, \
-                                        uint16_t: expect_func_uint16_eq, \
-                                        int32_t: expect_func_int32_eq, \
-                                        uint32_t: expect_func_uint32_eq, \
-                                        int64_t: expect_func_int64_eq, \
-                                        uint64_t: expect_func_uint64_eq)(func, #func, expected, __LINE__);
+#define EXPECT_EQ_SIGNED(func,expected) expect_func_signed_eq((int64_t (*)())func, #func, (int64_t)expected, __LINE__);
+#define EXPECT_EQ_UNSIGNED(func,expected) expect_func_unsigned_eq((uint64_t (*)())func, #func, (uint64_t)expected, __LINE__);
+
 #define EXPECT_TRUE(func) _Generic((func), \
                                            int8_t: expect_true_func_int8, \
                                            uint8_t: expect_true_func_uint8, \
@@ -85,15 +108,9 @@
                                             uint32_t: expect_true_func_uint32, \
                                             int64_t: expect_true_func_int64, \
                                             uint64_t: expect_true_func_uint64)(func, #func, __LINE__);
-#define ASSERT_EQ(func,expected) _Generic((expected), \
-                                        int8_t: assert_func_int8_eq, \
-                                        uint8_t: assert_func_uint8_eq, \
-                                        int16_t: assert_func_int16_eq, \
-                                        uint16_t: assert_func_uint16_eq, \
-                                        int32_t: assert_func_int32_eq, \
-                                        uint32_t: assert_func_uint32_eq, \
-                                        int64_t: assert_func_int64_eq, \
-                                        uint64_t: assert_func_uint64_eq)(func, #func, expected, __LINE__);
+#define ASSERT_EQ_SIGNED(func,expected) assert_func_signed_eq((int64_t (*)())func, #func, (int64_t)expected, __LINE__);
+#define ASSERT_EQ_UNSIGNED(func,expected) assert_func_unsigned_eq((uint64_t (*)())func, #func, (uint64_t)expected, __LINE__);
+
 //Additional functions
 #define INIT() char* funcname = ""; int line = 0; int sigsegv = 0; time_t start = {0}; time_t stop = {0}; long double time = 0; 
 #define SETRETURN setjmp(sigsegv_buf)
@@ -146,67 +163,19 @@ void handle_function_test(char* funcname, int32_t line){
 
 }
 
-void expect_func_int8_eq(int8_t (*func)(), char* funcname, int8_t expected, int line){
+void expect_func_signed_eq(int64_t (*func)(), char* funcname, int64_t expected, int line){
     EXPECT_FUNC_INT_BODY
 }
 
-void expect_func_uint8_eq(uint8_t (*func)(), char* funcname, int8_t expected, int line){
+void expect_func_unsigned_eq(uint64_t (*func)(), char* funcname, uint64_t expected, int line){
     EXPECT_FUNC_INT_BODY
 }
 
-void expect_func_int16_eq(int16_t (*func)(), char* funcname, int8_t expected, int line){
-    EXPECT_FUNC_INT_BODY
-}
-
-void expect_func_uint16_eq(uint16_t (*func)(), char* funcname, int8_t expected, int line){
-    EXPECT_FUNC_INT_BODY
-}
-
-void expect_func_int32_eq(int32_t (*func)(), char* funcname, int8_t expected, int line){
-    EXPECT_FUNC_INT_BODY
-}
-
-void expect_func_uint32_eq(uint32_t (*func)(), char* funcname, int8_t expected, int line){
-    EXPECT_FUNC_INT_BODY
-}
-
-void expect_func_int64_eq(int64_t (*func)(), char* funcname, int8_t expected, int line){
-    EXPECT_FUNC_INT_BODY
-}
-
-void expect_func_uint64_eq(uint64_t (*func)(), char* funcname, int8_t expected, int line){
-    EXPECT_FUNC_INT_BODY
-}
-
-void assert_func_int8_eq(int (*func)(), char* funcname, int expected, int line){
+void assert_func_signed_eq(int64_t (*func)(), char* funcname, int64_t expected, int line){
     ASSERT_FUNC_INT_BODY
 }
 
-void assert_func_uint8_eq(int (*func)(), char* funcname, int expected, int line){
-    ASSERT_FUNC_INT_BODY
-}
-
-void assert_func_int16_eq(int (*func)(), char* funcname, int expected, int line){
-    ASSERT_FUNC_INT_BODY
-}
-
-void assert_func_uint16_eq(int (*func)(), char* funcname, int expected, int line){
-    ASSERT_FUNC_INT_BODY
-}
-
-void assert_func_int32_eq(int (*func)(), char* funcname, int expected, int line){
-    ASSERT_FUNC_INT_BODY
-}
-
-void assert_func_uint32_eq(int (*func)(), char* funcname, int expected, int line){
-    ASSERT_FUNC_INT_BODY
-}
-
-void assert_func_int64_eq(int (*func)(), char* funcname, int expected, int line){
-    ASSERT_FUNC_INT_BODY
-}
-
-void assert_func_uint64_eq(int (*func)(), char* funcname, int expected, int line){
+void assert_func_unsigned_eq(uint64_t (*func)(), char* funcname, uint64_t expected, int line){
     ASSERT_FUNC_INT_BODY
 }
 
