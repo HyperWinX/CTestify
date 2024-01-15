@@ -96,20 +96,20 @@ int double_comparer(double arg1, double arg2){return arg1 == arg2;}
         return;}
 
 //General EXPECT and ASSERT declaration
-#define EXPECT_EQ_SIGNED(func,expected) expect_func_signed_eq((int64_t (*)())func, #func, (int64_t)expected, __LINE__);
-#define EXPECT_EQ_UNSIGNED(func,expected) expect_func_unsigned_eq((uint64_t (*)())func, #func, (uint64_t)expected, __LINE__);
+#define EXPECT_EQ(value, expected) if (firstphase) total++; else expect_equals("", __LINE__, COMPARER(value, expected))
+#define EXPECT_EQM(value, expected, errmsg) if (firstphase) total++; else expect_equals(errmsg, __LINE__, COMPARER(value, expected))
+#define ASSERT_EQ(value, expected) if (firstphase) total++; else assert_equals("", __LINE__, COMPARER(value, expected))
+#define ASSERT_EQM(value, expected, errmsg) if (firstphase) total++; else assert_equals(errmsg, __LINE__, COMPARER(value, expected))
 
-#define EXPECT_TRUE(func) _Generic((func), \
-                                           int8_t: expect_true_func_int8, \
-                                           uint8_t: expect_true_func_uint8, \
-                                           int16_t: expect_true_func_int16, \
-                                            uint16_t: expect_true_func_uint16, \
-                                            int32_t: expect_true_func_int32, \
-                                            uint32_t: expect_true_func_uint32, \
-                                            int64_t: expect_true_func_int64, \
-                                            uint64_t: expect_true_func_uint64)(func, #func, __LINE__);
-#define ASSERT_EQ_SIGNED(func,expected) assert_func_signed_eq((int64_t (*)())func, #func, (int64_t)expected, __LINE__);
-#define ASSERT_EQ_UNSIGNED(func,expected) assert_func_unsigned_eq((uint64_t (*)())func, #func, (uint64_t)expected, __LINE__);
+#define EXPECT_TRUE(val) if (firstphase) total++; else expect_equals("", __LINE__, val > 0)
+#define EXPECT_TRUEM(val, errmsg) if (firstphase) total++; else expect_equals(errmsg, __LINE__, val > 0)
+#define ASSERT_TRUE(val) if (firstphase) total++; else assert_equals("", __LINE__, val > 0)
+#define ASSERT_TRUEM(val, errmsg) if (firstphase) total++; else assert_equals(errmsg, __LINE__, val > 0)
+
+#define EXPECT_FALSE(val) if (firstphase) total++; else expect_equals("", __LINE__, val == 0)
+#define EXPECT_FALSEM(val, errmsg) if (firstphase) total++; else expect_equals(errmsg, __LINE__, val == 0)
+#define ASSERT_FALSE(val) if (firstphase) total++; else expect_equals("", __LINE__, val == 0)
+#define ASSERT_FALSEM(val, errmsg) if (firstphase) total++; else expect_equals(errmsg, __LINE__, val == 0)
 
 //Additional functions
 #define INIT() char* funcname = ""; int line = 0; int sigsegv = 0; time_t start = {0}; time_t stop = {0}; long double time = 0; 
@@ -155,28 +155,10 @@ void test_main();
 
 //All testing functions
 
-void print_start(char* funcname){
-    PRINT_RUN
-}
 
-void handle_function_test(char* funcname, int32_t line){
 
-}
-
-void expect_func_signed_eq(int64_t (*func)(), char* funcname, int64_t expected, int line){
-    EXPECT_FUNC_INT_BODY
-}
-
-void expect_func_unsigned_eq(uint64_t (*func)(), char* funcname, uint64_t expected, int line){
-    EXPECT_FUNC_INT_BODY
-}
-
-void assert_func_signed_eq(int64_t (*func)(), char* funcname, int64_t expected, int line){
-    ASSERT_FUNC_INT_BODY
-}
-
-void assert_func_unsigned_eq(uint64_t (*func)(), char* funcname, uint64_t expected, int line){
-    ASSERT_FUNC_INT_BODY
+void expect_equals(char* errmsg, int32_t line, int compareresult){
+	
 }
 
 //Actual entry point, instead of the fake one
