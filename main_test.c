@@ -3,6 +3,7 @@
 int func(){
     int *p = 0;
     *p = 0xDEAD;
+    return 0;
 }
 
 int fucking_function_test(){
@@ -10,7 +11,7 @@ int fucking_function_test(){
 }
 
 void test_main(){
-    EXPECT_FUNC_INT_EQ(fucking_function_test, 2);
-    ASSERT_FUNC_INT_EQ(fucking_function_test, 2);
-    EXPECT_FUNC_INT_EQ(fucking_function_test, 2);
+    SET_TEST_SUITE_NAME(TESTS);
+    EXPECT_EQ(ACTUALTESTS, 5, 0);
+    EXPECT_EQ(STREQTEST, "test", "test");
 }

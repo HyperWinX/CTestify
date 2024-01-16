@@ -188,11 +188,13 @@ int main(){
     signal(SIGSEGV, sigsegv_handler);
     total_functions = 0;
     time_t start, end;
+    // Disable stdout 
     int stdout_backup = dup(fileno(stdout));
     int dev_null_fd = open("/dev/null", O_WRONLY);
     dup2(dev_null_fd, fileno(stdout));
     close(dev_null_fd);
     test_main();
+    // Return stdout back 
     dup2(stdout_backup, fileno(stdout));
     close(stdout_backup);
     if (total_functions == 0){
@@ -214,7 +216,8 @@ int main(){
     if (successed == 0) printf(CRED);
     else if (failed == 0) printf(CGREEN);
     else printf(CYELLOW);
-    printf("[=========]%s %d tests finished (%Lfs total)\n\n", CRESET, ran, total_time);
+    printf("[=========]%s %d tests finished ", CRESET, ran);
+    printf(total_time < 1 ? "(%.3Lfms total)\n\n" : "(%.3Lfs total)\n\n", total_time);
     printf("%s[=========]%s Destroying testing environment...\n", CGREEN, CRESET);
     if (TestingEnvironmentDestroy())
         printf(CRED "Testing environment destroy failure!\n" CRESET);
