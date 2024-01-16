@@ -16,14 +16,11 @@
 
 //All global fields required by engine
 int total_functions = 0;
-int currentfunction = 1;
 int firstphase = 1;
-int max_funcname_len = 0;
 int successed = 0;
 int failed = 0;
 int ran = 0;
 int assert_failed = 0;
-long double totaltime = 0;
 char* current_test_suite = "";
 jmp_buf sigsegv_buf = {0};
 struct ComparerRet comparerret;
@@ -96,7 +93,7 @@ int double_comparer(double arg1, double arg2){
 }
 
 //Function bodies
-#define DEFAULT_BODY if(assert_failed) return; \
+#define DEFAULT_BODY CHECK_ASSERT_FAILURE \
     if (strlen(testname) <= 1 || strlen(current_test_suite) <= 1){ \
         printf("Test name or test suite name can't be null!\n");assert_failed++;return;} \
 	printf("%s%s%s %s.%s\n", CGREEN, "[ RUN     ]", CRESET, current_test_suite, testname); \
@@ -117,11 +114,8 @@ int double_comparer(double arg1, double arg2){
             case CharPointer:{PRINT_EXPECTED_CHARP break;}}failed++;}ran++;
 
 //Small macroses for more easy functions structure, automatizing routines
-#define SPACECOUNT max_funcname_len - strlen(funcname)
-#define OFFSET SPACECOUNT,""
 #define CHECK_ASSERT_FAILURE if (assert_failed) return;
 #define RESET_COMPARERRET comparerret.args.intargs[0] = 0; comparerret.args.intargs[1] = 0; comparerret.mode = 0;
-#define PRINT_RUN printf("%s%s%s [%s] %s\n", CGREEN, "[ RUN     ]", CRESET, current_tests, funcname);
 #define PRINT_EXPECTED_SIGNED printf("\t%sActual value of %s: %ld (0x%lx)\n\tExpected: %ld (0x%lx)\n", msg_avail ? buf : "", firstarg, comparerret.args.intargs[0], comparerret.args.intargs[0], comparerret.args.intargs[1], comparerret.args.intargs[1]);
 #define PRINT_EXPECTED_UNSIGNED printf("\t%sActual value of %s: %lu (0x%lx)\n\tExpected: %lu (0x%lx)\n", msg_avail ? buf : "", firstarg, comparerret.args.uintargs[0], comparerret.args.uintargs[0], comparerret.args.uintargs[1], comparerret.args.uintargs[1]);
 #define PRINT_EXPECTED_FLOAT printf("\t%sActual value of %s: %f (0x%a)\n\tExpected: %f (0x%a)\n", msg_avail ? buf : "", firstarg, comparerret.args.floatargs[0], comparerret.args.floatargs[0], comparerret.args.floatargs[1], comparerret.args.floatargs[1]);
@@ -129,7 +123,7 @@ int double_comparer(double arg1, double arg2){
 #define PRINT_EXPECTED_CHARP printf("\t%sActual value of %s: %s (0x%p)\n\tExpected: %s (0x%p)\n", msg_avail ? buf : "", firstarg, comparerret.args.charpargs[0], comparerret.args.charpargs[0], comparerret.args.charpargs[1], comparerret.args.charpargs[1]);
 
 
-//General EXPECT and ASSERT declaration
+//General EXPECT and ASSERT declarations  
 #define EXPECT_EQ(test_name, value, expected) if (firstphase) total_functions++; else expect_equals("", __LINE__, COMPARER(value, expected), #value, #expected, #test_name)
 #define ASSERT_EQ(test_name, value, expected) if (firstphase) total_functions++; else assert_equals("", __LINE__, COMPARER(value, expected), #value, #expected, #test_name)
 #define EXPECT_EQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else expect_equals(errmsg, __LINE__, COMPARER(value, expected), #value, #expected, #test_name)
@@ -145,11 +139,32 @@ int double_comparer(double arg1, double arg2){
 #define EXPECT_FALSEM(test_name, val, errmsg) if (firstphase) total_functions++; else expect_equals(errmsg, __LINE__, val == 0, #val, "", #test_name)
 #define ASSERT_FALSEM(test_name, val, errmsg) if (firstphase) total_functions++; else expect_equals(errmsg, __LINE__, val == 0, #val, "", #test_name)
 
+#define EXPECT_BIGGER(test_name, val, expected) if (firstphase) totalfunctions++; else expect_equals("", __LINE__, val > expected, #val, #expected, #test_name)
+#define ASSERT_BIGGER(test_name, val, expected) if (firstphase) totalfunctions++; else assert_equals("", __LINE__, val > expected, #val, #expected, #test_name)
+#define EXPECT_BIGGERM(test_name, val, expected, errmsg) if (firstphase) totalfunctions++; else expect_equals(errmsg, __LINE__, val > expected, #val, #expected, #test_name)
+#define ASSERT_BIGGERM(test_name, val, expected, errmsg) if (firstphase) totalfunctions++; else assert_equals(errmsg, __LINE__, val > expected, #val, #expected, #test_name)
+
+#define EXPECT_LESS(test_name, val, expected) if (firstphase) totalfunctions++; else expect_equals("", __LINE__, val < expected, #val, #expected, #test_name)
+#define ASSERT_LESS(test_name, val, expected) if (firstphase) totalfunctions++; else assert_equals("", __LINE__, val < expected, #val, #expected, #test_name)
+#define EXPECT_LESSM(test_name, val, expected, errmsg) if (firstphase) totalfunctions++; else expect_equals(errmsg, __LINE__, val < expected, #val, #expected, #test_name)
+#define ASSERT_LESSM(test_name, val, expected, errmsg) if (firstphase) totalfunctions++; else assert_equals(errmsg, __LINE__, val < expected, #val, #expected, #test_name)
+
+#define EXPECT_BIGGEROREQ(test_name, val, expected) if (firstphase) totalfunctions++; else expect_equals("", __LINE__, val => expected, #val, #expected, #test_name)
+#define ASSERT_BIGGEROREQ(test_name, val, expected) if (firstphase) totalfunctions++; else assert_equals("", __LINE__, val => expected, #val, #expected, #test_name)
+#define EXPECT_BIGGEROREQM(test_name, val, expected, errmsg) if (firstphase) totalfunctions++; else expect_equals(errmsg, __LINE__, val => expected, #val, #expected, #test_name)
+#define ASSERT_BIGGEROREQM(test_name, val, expected, errmsg) if (firstphase) totalfunctions++; else assert_equals(errmsg, __LINE__, val => expected, #val, #expected, #test_name)
+
+#define EXPECT_LESSOREQ(test_name, val, expected) if (firstphase) totalfunctions++; else expect_equals("", __LINE__, val <= expected, #val, #expected, #test_name)
+#define ASSERT_LESSOREQ(test_name, val, expected) if (firstphase) totalfunctions++; else assert_equals("", __LINE__, val <= expected, #val, #expected, #test_name)
+#define EXPECT_LESSOREQM(test_name, val, expected, errmsg) if (firstphase) totalfunctions++; else expect_equals(errmsg, __LINE__, val <= expected, #val, #expected, #test_name)
+#define ASSERT_LESSOREQ(test_name, val, expected, errmsg) if (firstphase) totalfunctions++; else assert_equals(errmsg, __LINE__, val <= expected, #val, #expected, #test_name)
+
+
 //Additional functions
 #define PRINT_START(func) print_start(#func);
 #define SET_TEST_SUITE_NAME(name) current_test_suite = #name;
 
-//Handler of segmentation fault, required for tests engine stability
+//Handler of segmentation fault, required for tests engine stability 
 void sigsegv_handler(int s){
     switch (s){
         case SIGSEGV:
