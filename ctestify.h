@@ -24,8 +24,17 @@ int assert_failed = 0;
 char* current_test_suite = "";
 jmp_buf sigsegv_buf = {0};
 struct ComparerRet comparerret;
+char* messages[] = {
+	"Expected values equality!",
+	"Expected true value!",
+	"Expected false value!",
+	"Expected bigger value!",
+	"Expected less value!",
+	"Expected bigger or equal value!",
+	"Expected less or equal value!"
+};
 
-//Unions, enums and structs
+//Unions, enums and structs 
 typedef enum Mode{
     SignedInt,
     UnsignedInt,
@@ -116,48 +125,48 @@ int double_comparer(double arg1, double arg2){
 //Small macroses for more easy functions structure, automatizing routines
 #define CHECK_ASSERT_FAILURE if (assert_failed) return;
 #define RESET_COMPARERRET comparerret.args.intargs[0] = 0; comparerret.args.intargs[1] = 0; comparerret.mode = 0;
-#define PRINT_EXPECTED_SIGNED printf("\t%sActual value of %s: %ld (0x%lx)\n\tExpected: %ld (0x%lx)\n", msg_avail ? buf : "", firstarg, comparerret.args.intargs[0], comparerret.args.intargs[0], comparerret.args.intargs[1], comparerret.args.intargs[1]);
-#define PRINT_EXPECTED_UNSIGNED printf("\t%sActual value of %s: %lu (0x%lx)\n\tExpected: %lu (0x%lx)\n", msg_avail ? buf : "", firstarg, comparerret.args.uintargs[0], comparerret.args.uintargs[0], comparerret.args.uintargs[1], comparerret.args.uintargs[1]);
+#define PRINT_EXPECTED_SIGNED printf("\t%s\n\tExpected: %ld (0x%lx)\n\tActual value of %s: %ld (0x%lx)", msg_avail ? buf : messages[index], comparerret.args.intargs[1], comparerret.args.intargs[1], firstarg, comparerret.args.intargs[0], comparerret.args.intargs[0]);
+#define PRINT_EXPECTED_UNSIGNED printf("\t%s\n\tExpected: %lu (0x%lx)\n\t%sActual value of %s: %lu (0x%lx)", messages[index], msg_avail ? buf : "", firstarg, comparerret.args.uintargs[0], comparerret.args.uintargs[0], comparerret.args.uintargs[1], comparerret.args.uintargs[1]);
 #define PRINT_EXPECTED_FLOAT printf("\t%sActual value of %s: %f (0x%a)\n\tExpected: %f (0x%a)\n", msg_avail ? buf : "", firstarg, comparerret.args.floatargs[0], comparerret.args.floatargs[0], comparerret.args.floatargs[1], comparerret.args.floatargs[1]);
 #define PRINT_EXPECTED_DOUBLE printf("\t%sActual value of %s: %lf (0x%a)\n\tExpected: %lf (0x%a)\n", msg_avail ? buf : "", firstarg, comparerret.args.doubleargs[0], comparerret.args.doubleargs[0], comparerret.args.doubleargs[1], comparerret.args.doubleargs[1]);
 #define PRINT_EXPECTED_CHARP printf("\t%sActual value of %s: %s (0x%p)\n\tExpected: %s (0x%p)\n", msg_avail ? buf : "", firstarg, comparerret.args.charpargs[0], comparerret.args.charpargs[0], comparerret.args.charpargs[1], comparerret.args.charpargs[1]);
 
 
 //General EXPECT and ASSERT declarations  
-#define EXPECT_EQ(test_name, value, expected) if (firstphase) total_functions++; else expect_equals("", __LINE__, COMPARER(value, expected), #value, #expected, #test_name)
-#define ASSERT_EQ(test_name, value, expected) if (firstphase) total_functions++; else assert_equals("", __LINE__, COMPARER(value, expected), #value, #expected, #test_name)
-#define EXPECT_EQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else expect_equals(errmsg, __LINE__, COMPARER(value, expected), #value, #expected, #test_name)
-#define ASSERT_EQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else assert_equals(errmsg, __LINE__, COMPARER(value, expected), #value, #expected, #test_name)
+#define EXPECT_EQ(test_name, value, expected) if (firstphase) total_functions++; else expect_equals("", __LINE__, COMPARER(value, expected), #value, #expected, #test_name, 0)
+#define ASSERT_EQ(test_name, value, expected) if (firstphase) total_functions++; else assert_equals("", __LINE__, COMPARER(value, expected), #value, #expected, #test_name, 0)
+#define EXPECT_EQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else expect_equals(errmsg, __LINE__, COMPARER(value, expected), #value, #expected, #test_name, 0)
+#define ASSERT_EQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else assert_equals(errmsg, __LINE__, COMPARER(value, expected), #value, #expected, #test_name, 0)
 
-#define EXPECT_TRUE(test_name, val) if (firstphase) total_functions++; else expect_equals("", __LINE__, val > 0, #val, "", #test_name)
-#define ASSERT_TRUE(test_name, val) if (firstphase) total_functions++; else assert_equals("", __LINE__, val > 0, #val, "", #test_name)
-#define EXPECT_TRUEM(test_name, val, errmsg) if (firstphase) total_functions++; else expect_equals(errmsg, __LINE__, val > 0, #val, "", #test_name)
-#define ASSERT_TRUEM(test_name, val, errmsg) if (firstphase) total_functions++; else assert_equals(errmsg, __LINE__, val > 0, #val, "", #test_name)
+#define EXPECT_TRUE(test_name, val) if (firstphase) total_functions++; else expect_equals("", __LINE__, val > 0, #val, "", #test_name, 1)
+#define ASSERT_TRUE(test_name, val) if (firstphase) total_functions++; else assert_equals("", __LINE__, val > 0, #val, "", #test_name, 1)
+#define EXPECT_TRUEM(test_name, val, errmsg) if (firstphase) total_functions++; else expect_equals(errmsg, __LINE__, val > 0, #val, "", #test_name, 1)
+#define ASSERT_TRUEM(test_name, val, errmsg) if (firstphase) total_functions++; else assert_equals(errmsg, __LINE__, val > 0, #val, "", #test_name, 1)
 
-#define EXPECT_FALSE(test_name, val) if (firstphase) total_functions++; else expect_equals("", __LINE__, val == 0, #val, "", #test_name)
-#define ASSERT_FALSE(test_name, val) if (firstphase) total_functions++; else expect_equals("", __LINE__, val == 0, #val, "", #test_name)
-#define EXPECT_FALSEM(test_name, val, errmsg) if (firstphase) total_functions++; else expect_equals(errmsg, __LINE__, val == 0, #val, "", #test_name)
-#define ASSERT_FALSEM(test_name, val, errmsg) if (firstphase) total_functions++; else expect_equals(errmsg, __LINE__, val == 0, #val, "", #test_name)
+#define EXPECT_FALSE(test_name, val) if (firstphase) total_functions++; else expect_equals("", __LINE__, val == 0, #val, "", #test_name, 2)
+#define ASSERT_FALSE(test_name, val) if (firstphase) total_functions++; else expect_equals("", __LINE__, val == 0, #val, "", #test_name, 2)
+#define EXPECT_FALSEM(test_name, val, errmsg) if (firstphase) total_functions++; else expect_equals(errmsg, __LINE__, val == 0, #val, "", #test_name, 2)
+#define ASSERT_FALSEM(test_name, val, errmsg) if (firstphase) total_functions++; else expect_equals(errmsg, __LINE__, val == 0, #val, "", #test_name, 2)
 
-#define EXPECT_BIGGER(test_name, val, expected) if (firstphase) totalfunctions++; else expect_equals("", __LINE__, val > expected, #val, #expected, #test_name)
-#define ASSERT_BIGGER(test_name, val, expected) if (firstphase) totalfunctions++; else assert_equals("", __LINE__, val > expected, #val, #expected, #test_name)
-#define EXPECT_BIGGERM(test_name, val, expected, errmsg) if (firstphase) totalfunctions++; else expect_equals(errmsg, __LINE__, val > expected, #val, #expected, #test_name)
-#define ASSERT_BIGGERM(test_name, val, expected, errmsg) if (firstphase) totalfunctions++; else assert_equals(errmsg, __LINE__, val > expected, #val, #expected, #test_name)
+#define EXPECT_BIGGER(test_name, val, expected) if (firstphase) totalfunctions++; else expect_equals("", __LINE__, val > expected, #val, #expected, #test_name, 3)
+#define ASSERT_BIGGER(test_name, val, expected) if (firstphase) totalfunctions++; else assert_equals("", __LINE__, val > expected, #val, #expected, #test_name, 3)
+#define EXPECT_BIGGERM(test_name, val, expected, errmsg) if (firstphase) totalfunctions++; else expect_equals(errmsg, __LINE__, val > expected, #val, #expected, #test_name, 3)
+#define ASSERT_BIGGERM(test_name, val, expected, errmsg) if (firstphase) totalfunctions++; else assert_equals(errmsg, __LINE__, val > expected, #val, #expected, #test_name, 3)
 
-#define EXPECT_LESS(test_name, val, expected) if (firstphase) totalfunctions++; else expect_equals("", __LINE__, val < expected, #val, #expected, #test_name)
-#define ASSERT_LESS(test_name, val, expected) if (firstphase) totalfunctions++; else assert_equals("", __LINE__, val < expected, #val, #expected, #test_name)
-#define EXPECT_LESSM(test_name, val, expected, errmsg) if (firstphase) totalfunctions++; else expect_equals(errmsg, __LINE__, val < expected, #val, #expected, #test_name)
-#define ASSERT_LESSM(test_name, val, expected, errmsg) if (firstphase) totalfunctions++; else assert_equals(errmsg, __LINE__, val < expected, #val, #expected, #test_name)
+#define EXPECT_LESS(test_name, val, expected) if (firstphase) totalfunctions++; else expect_equals("", __LINE__, val < expected, #val, #expected, #test_name, 4)
+#define ASSERT_LESS(test_name, val, expected) if (firstphase) totalfunctions++; else assert_equals("", __LINE__, val < expected, #val, #expected, #test_name, 4)
+#define EXPECT_LESSM(test_name, val, expected, errmsg) if (firstphase) totalfunctions++; else expect_equals(errmsg, __LINE__, val < expected, #val, #expected, #test_name, 4)
+#define ASSERT_LESSM(test_name, val, expected, errmsg) if (firstphase) totalfunctions++; else assert_equals(errmsg, __LINE__, val < expected, #val, #expected, #test_name, 4)
 
-#define EXPECT_BIGGEROREQ(test_name, val, expected) if (firstphase) totalfunctions++; else expect_equals("", __LINE__, val => expected, #val, #expected, #test_name)
-#define ASSERT_BIGGEROREQ(test_name, val, expected) if (firstphase) totalfunctions++; else assert_equals("", __LINE__, val => expected, #val, #expected, #test_name)
-#define EXPECT_BIGGEROREQM(test_name, val, expected, errmsg) if (firstphase) totalfunctions++; else expect_equals(errmsg, __LINE__, val => expected, #val, #expected, #test_name)
-#define ASSERT_BIGGEROREQM(test_name, val, expected, errmsg) if (firstphase) totalfunctions++; else assert_equals(errmsg, __LINE__, val => expected, #val, #expected, #test_name)
+#define EXPECT_BIGGEROREQ(test_name, val, expected) if (firstphase) totalfunctions++; else expect_equals("", __LINE__, val => expected, #val, #expected, #test_name, 5)
+#define ASSERT_BIGGEROREQ(test_name, val, expected) if (firstphase) totalfunctions++; else assert_equals("", __LINE__, val => expected, #val, #expected, #test_name, 5)
+#define EXPECT_BIGGEROREQM(test_name, val, expected, errmsg) if (firstphase) totalfunctions++; else expect_equals(errmsg, __LINE__, val => expected, #val, #expected, #test_name, 5)
+#define ASSERT_BIGGEROREQM(test_name, val, expected, errmsg) if (firstphase) totalfunctions++; else assert_equals(errmsg, __LINE__, val => expected, #val, #expected, #test_name, 5)
 
-#define EXPECT_LESSOREQ(test_name, val, expected) if (firstphase) totalfunctions++; else expect_equals("", __LINE__, val <= expected, #val, #expected, #test_name)
-#define ASSERT_LESSOREQ(test_name, val, expected) if (firstphase) totalfunctions++; else assert_equals("", __LINE__, val <= expected, #val, #expected, #test_name)
-#define EXPECT_LESSOREQM(test_name, val, expected, errmsg) if (firstphase) totalfunctions++; else expect_equals(errmsg, __LINE__, val <= expected, #val, #expected, #test_name)
-#define ASSERT_LESSOREQ(test_name, val, expected, errmsg) if (firstphase) totalfunctions++; else assert_equals(errmsg, __LINE__, val <= expected, #val, #expected, #test_name)
+#define EXPECT_LESSOREQ(test_name, val, expected) if (firstphase) totalfunctions++; else expect_equals("", __LINE__, val <= expected, #val, #expected, #test_name, 6)
+#define ASSERT_LESSOREQ(test_name, val, expected) if (firstphase) totalfunctions++; else assert_equals("", __LINE__, val <= expected, #val, #expected, #test_name, 6)
+#define EXPECT_LESSOREQM(test_name, val, expected, errmsg) if (firstphase) totalfunctions++; else expect_equals(errmsg, __LINE__, val <= expected, #val, #expected, #test_name, 6)
+#define ASSERT_LESSOREQM(test_name, val, expected, errmsg) if (firstphase) totalfunctions++; else assert_equals(errmsg, __LINE__, val <= expected, #val, #expected, #test_name, 6)
 
 
 //Additional functions
@@ -185,12 +194,12 @@ int TestingEnvironmentDestroy(){return 0;}
 
 //All testing functions
 
-void expect_equals(char* errmsg, int32_t line, int comparerresult, char* firstarg, char* secondarg, char* testname){
+void expect_equals(char* errmsg, int32_t line, int comparerresult, char* firstarg, char* secondarg, char* testname, int index){
     DEFAULT_BODY
     RESET_COMPARERRET
 }
 
-void assert_equals(char* errmsg, int32_t line, int comparerresult, char* firstarg, char* secondarg, char* testname){
+void assert_equals(char* errmsg, int32_t line, int comparerresult, char* firstarg, char* secondarg, char* testname, int index){
     DEFAULT_BODY
     if (!comparerresult) assert_failed++;
     RESET_COMPARERRET
