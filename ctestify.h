@@ -126,10 +126,10 @@ int double_comparer(double arg1, double arg2){
 #define CHECK_ASSERT_FAILURE if (assert_failed) return;
 #define RESET_COMPARERRET comparerret.args.intargs[0] = 0; comparerret.args.intargs[1] = 0; comparerret.mode = 0;
 #define PRINT_EXPECTED_SIGNED printf("\t%s\n\tExpected: %ld (0x%lx)\n\tActual value of %s: %ld (0x%lx)\n", msg_avail ? buf : messages[index], comparerret.args.intargs[1], comparerret.args.intargs[1], firstarg, comparerret.args.intargs[0], comparerret.args.intargs[0]);
-#define PRINT_EXPECTED_UNSIGNED printf("\t%s\n\tExpected: %ld (0x%lx)\n\tActual value of %s: %ld (0x%lx)\n", msg_avail ? buf : messages[index], comparerret.args.uintargs[1], comparerret.args.uintargs[1], firstarg, comparerret.args.uintargs[0], comparerret.args.uintargs[0]);
-#define PRINT_EXPECTED_FLOAT printf("\t%s\n\tExpected: %ld (0x%lx)\n\tActual value of %s: %ld (0x%lx)\n", msg_avail ? buf : messages[index], comparerret.args.floatargs[1], comparerret.args.floatargs[1], firstarg, comparerret.args.floatargs[0], comparerret.args.floatargs[0]);
-#define PRINT_EXPECTED_DOUBLE printf("\t%s\n\tExpected: %ld (0x%lx)\n\tActual value of %s: %ld (0x%lx)\n", msg_avail ? buf : messages[index], comparerret.args.doubleargs[1], comparerret.args.doubleargs[1], firstarg, comparerret.args.doubleargs[0], comparerret.args.doubleargs[0]);
-#define PRINT_EXPECTED_CHARP printf("\t%s\n\tExpected: %ld (0x%lx)\n\tActual value of %s: %ld (0x%lx)\n", msg_avail ? buf : messages[index], comparerret.args.charpargs[1], comparerret.args.charpargs[1], firstarg, comparerret.args.charpargs[0], comparerret.args.charpargs[0]);
+#define PRINT_EXPECTED_UNSIGNED printf("\t%s\n\tExpected: %lu (0x%lx)\n\tActual value of %s: %lu (0x%lx)\n", msg_avail ? buf : messages[index], comparerret.args.uintargs[1], comparerret.args.uintargs[1], firstarg, comparerret.args.uintargs[0], comparerret.args.uintargs[0]);
+#define PRINT_EXPECTED_FLOAT printf("\t%s\n\tExpected: %f (0x%a)\n\tActual value of %s: %f (0x%a)\n", msg_avail ? buf : messages[index], comparerret.args.floatargs[1], comparerret.args.floatargs[1], firstarg, comparerret.args.floatargs[0], comparerret.args.floatargs[0]);
+#define PRINT_EXPECTED_DOUBLE printf("\t%s\n\tExpected: %lf (0x%a)\n\tActual value of %s: %lf (0x%a)\n", msg_avail ? buf : messages[index], comparerret.args.doubleargs[1], comparerret.args.doubleargs[1], firstarg, comparerret.args.doubleargs[0], comparerret.args.doubleargs[0]);
+#define PRINT_EXPECTED_CHARP printf("\t%s\n\tExpected: %s (0x%p)\n\tActual value of %s: %s (0x%p)\n", msg_avail ? buf : messages[index], comparerret.args.charpargs[1], comparerret.args.charpargs[1], firstarg, comparerret.args.charpargs[0], comparerret.args.charpargs[0]);
 
 
 //General EXPECT and ASSERT declarations  
@@ -241,7 +241,7 @@ int main(){
     else if (failed == 0) printf(CGREEN);
     else printf(CYELLOW);
     printf("[=========]%s %d tests finished ", CRESET, ran);
-    printf(total_time < 1 ? "(%.3Lfms total)\n\n" : "(%.3Lfs total)\n\n", total_time);
+    printf(total_time < 1 ? "(%Lfms total)\n\n" : "(%.3Lfs total)\n\n", total_time * 1000);
     printf("%s[=========]%s Destroying testing environment...\n", CGREEN, CRESET);
     if (TestingEnvironmentDestroy())
         printf(CRED "Testing environment destroy failure!\n" CRESET);
