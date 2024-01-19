@@ -31,7 +31,8 @@ char* messages[] = {
 	"Expected bigger value!",
 	"Expected less value!",
 	"Expected bigger or equal value!",
-	"Expected less or equal value!"
+	"Expected less or equal value!",
+	"Expected function success, but it caused a segfault!"
 };
 
 //Unions, enums and structs 
@@ -73,30 +74,35 @@ struct ComparerRet{
 int signed_int_comparer(int64_t arg1, int64_t arg2){
     comparerret.args.intargs[0] = arg1;
     comparerret.args.intargs[1] = arg2;
+    comparerret.mode = SignedInt;
 
     return arg1 == arg2;
 }
 int unsigned_int_comparer(uint64_t arg1, uint64_t arg2){
     comparerret.args.uintargs[0] = arg1;
     comparerret.args.uintargs[1] = arg2;
+    compareret.mode = UnsignedInt;
 
     return arg1 == arg2;
 }
 int str_comparer(char* arg1, char* arg2){
     comparerret.args.charpargs[0] = arg1;
     comparerret.args.charpargs[1] = arg2;
+    comparerret.mode = CharPointer;
 
     return !strcmp(arg1, arg2);
 }
 int float_comparer(float arg1, float arg2){
     comparerret.args.floatargs[0] = arg1;
     comparerret.args.floatargs[1] = arg2;
+    comparerret.mode = Float;
 
     return arg1 == arg2;
 }
 int double_comparer(double arg1, double arg2){
     comparerret.args.floatargs[0] = arg1;
     comparerret.args.floatargs[1] = arg2;
+    comparerret.mode = Double;
 
     return arg1 == arg2;
 }
@@ -168,6 +174,10 @@ int double_comparer(double arg1, double arg2){
 #define EXPECT_LESSOREQM(test_name, val, expected, errmsg) if (firstphase) total_functions++; else expect_equals(errmsg, __LINE__, val <= expected, #val, #expected, #test_name, 6)
 #define ASSERT_LESSOREQM(test_name, val, expected, errmsg) if (firstphase) total_functions++; else assert_equals(errmsg, __LINE__, val <= expected, #val, #expected, #test_name, 6)
 
+#define EXPECT_FUNC_SUCCESS(test_name, func, arg) if (firstphase) total_functions++; else test_function_success("", __LINE__, (void(*)(void*))func, (void*)arg, #test_name, 7, 0)
+#define EXPECT_FUNC_SUCCESSM(test_name, func, arg, errmsg) if (firstphase) total_functions++; else test_function(errmsg, __LINE__, (void(*)(void*))func, (void*)arg, #test_name, 7, 0)
+#define ASSERT_FUNC_SUCCESS(test_name, func, arg) if (firstphase) total_functions++; else test_function("", __LINE__, (void(*)(void*))func, (void*)arg, #test_name, 7, 1)
+#define ASSERT_FUNC_SUCCESS(test_name, func, arg, errmsg) if (firstphase) total_functions++; else test_function(errmsg, __LINE__, (void(*)(void*))func, (void*)arg, #test_name, 7, 1)
 
 //Additional functions
 #define PRINT_START(func) print_start(#func);
@@ -205,6 +215,18 @@ void assert_equals(char* errmsg, int32_t line, int comparerresult, char* firstar
     RESET_COMPARERRET
 }
 
+void test_function_success(char* errmsg, int32_t line, void(*func)(void*), void* arg, char* testname, int index, int isassert){
+	if(!setjmp(sigsegv_buf)){
+		(*func)(arg);
+		successed++;
+	}else{
+		printf("%s[ SIGSEGV ]%s %s.%s\n", CRED, CRESET, current_test_suite, testname);
+		printf("\t%s\n", messages[index]);
+		failed++;
+	}
+	RESET_COMPARERET
+}
+
 //Actual entry point, instead of the fake one
 int main(){
     // Testing environment setup
@@ -236,12 +258,12 @@ int main(){
     test_main();
     end = clock();
     // Tests finalization, print results and destroy testing environment
-    long double total_time = ((double)(end - start)) / CLOCKS_PER_SEC;
+    long double total_time = ((double)(end - start)) / CLOCKS_PER_SEC * 1000;
     if (successed == 0) printf(CRED);
     else if (failed == 0) printf(CGREEN);
     else printf(CYELLOW);
     printf("[=========]%s %d tests finished ", CRESET, ran);
-    printf(total_time < 1 ? "(%Lfms total)\n\n" : "(%.3Lfs total)\n\n", total_time * 1000);
+    printf("(%.3Lfms total)\n\n", total_time);
     printf("%s[=========]%s Destroying testing environment...\n", CGREEN, CRESET);
     if (TestingEnvironmentDestroy())
         printf(CRED "Testing environment destroy failure!\n" CRESET);
