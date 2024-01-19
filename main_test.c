@@ -63,4 +63,7 @@ void test_main(){
     EXPECT_FUNC_SUCCESSM(FUNCTEST2, fucking_function_test, 0, "Custom error message for expect_function_test()!");
     EXPECT_FUNC_SUCCESS(FUNCTEST3, func, 0);
     EXPECT_FUNC_SUCCESSM(FUNCTEST4, func, 0, "Custom error message for expect_function_success()!");
+
+    SAFE_EXPECT_EQ(SAFEFUNCTEST1, fucking_function_test, 5);
+    SAFE_EXPECT_EQ(SAFEFUNCTEST2, func, 2);
 }
