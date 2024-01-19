@@ -81,7 +81,7 @@ int signed_int_comparer(int64_t arg1, int64_t arg2){
 int unsigned_int_comparer(uint64_t arg1, uint64_t arg2){
     comparerret.args.uintargs[0] = arg1;
     comparerret.args.uintargs[1] = arg2;
-    compareret.mode = UnsignedInt;
+    comparerret.mode = UnsignedInt;
 
     return arg1 == arg2;
 }
@@ -175,9 +175,9 @@ int double_comparer(double arg1, double arg2){
 #define ASSERT_LESSOREQM(test_name, val, expected, errmsg) if (firstphase) total_functions++; else assert_equals(errmsg, __LINE__, val <= expected, #val, #expected, #test_name, 6)
 
 #define EXPECT_FUNC_SUCCESS(test_name, func, arg) if (firstphase) total_functions++; else test_function_success("", __LINE__, (void(*)(void*))func, (void*)arg, #test_name, 7, 0)
-#define EXPECT_FUNC_SUCCESSM(test_name, func, arg, errmsg) if (firstphase) total_functions++; else test_function(errmsg, __LINE__, (void(*)(void*))func, (void*)arg, #test_name, 7, 0)
-#define ASSERT_FUNC_SUCCESS(test_name, func, arg) if (firstphase) total_functions++; else test_function("", __LINE__, (void(*)(void*))func, (void*)arg, #test_name, 7, 1)
-#define ASSERT_FUNC_SUCCESS(test_name, func, arg, errmsg) if (firstphase) total_functions++; else test_function(errmsg, __LINE__, (void(*)(void*))func, (void*)arg, #test_name, 7, 1)
+#define EXPECT_FUNC_SUCCESSM(test_name, func, arg, errmsg) if (firstphase) total_functions++; else test_function_success(errmsg, __LINE__, (void(*)(void*))func, (void*)arg, #test_name, 7, 0)
+#define ASSERT_FUNC_SUCCESS(test_name, func, arg) if (firstphase) total_functions++; else test_function_success("", __LINE__, (void(*)(void*))func, (void*)arg, #test_name, 7, 1)
+#define ASSERT_FUNC_SUCCESSM(test_name, func, arg, errmsg) if (firstphase) total_functions++; else test_function_success(errmsg, __LINE__, (void(*)(void*))func, (void*)arg, #test_name, 7, 1)
 
 //Additional functions
 #define PRINT_START(func) print_start(#func);
@@ -216,15 +216,17 @@ void assert_equals(char* errmsg, int32_t line, int comparerresult, char* firstar
 }
 
 void test_function_success(char* errmsg, int32_t line, void(*func)(void*), void* arg, char* testname, int index, int isassert){
+	printf("%s[ RUN     ]%s %s.%s\n", CGREEN, CRESET, current_test_suite, testname);
 	if(!setjmp(sigsegv_buf)){
 		(*func)(arg);
 		successed++;
+		printf("%s[      OK ]%s %s.%s\n", CGREEN, CRESET, current_test_suite, testname);
 	}else{
 		printf("%s[ SIGSEGV ]%s %s.%s\n", CRED, CRESET, current_test_suite, testname);
-		printf("\t%s\n", messages[index]);
+		printf("\t%s\n", strlen(errmsg) > 1 ? errmsg : messages[index]);
 		failed++;
 	}
-	RESET_COMPARERET
+	RESET_COMPARERRET
 }
 
 //Actual entry point, instead of the fake one

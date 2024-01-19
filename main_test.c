@@ -58,4 +58,9 @@ void test_main(){
     EXPECT_LESSOREQM(LESSOREQTEST2, 1, 5, "Custom error message for expect_less()!");
     EXPECT_LESSOREQ(LESSOREQTEST3, 10, 5);
     EXPECT_LESSOREQM(LESSOREQTEST4, 10, 5, "Custom error message for expect_less()!");
+
+    EXPECT_FUNC_SUCCESS(FUNCTEST1, fucking_function_test, 0);
+    EXPECT_FUNC_SUCCESSM(FUNCTEST2, fucking_function_test, 0, "Custom error message for expect_function_test()!");
+    EXPECT_FUNC_SUCCESS(FUNCTEST3, func, 0);
+    EXPECT_FUNC_SUCCESSM(FUNCTEST4, func, 0, "Custom error message for expect_function_success()!");
 }
