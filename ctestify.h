@@ -179,19 +179,18 @@ int double_comparer(double arg1, double arg2){
 #define EXPECT_FUNC_SUCCESSM(test_name, func, arg, errmsg) if (firstphase) total_functions++; else test_function_success(errmsg, __LINE__, (void(*)(void*))func, (void*)arg, #test_name, 7, 0)
 #define ASSERT_FUNC_SUCCESS(test_name, func, arg) if (firstphase) total_functions++; else test_function_success("", __LINE__, (void(*)(void*))func, (void*)arg, #test_name, 7, 1)
 #define ASSERT_FUNC_SUCCESSM(test_name, func, arg, errmsg) if (firstphase) total_functions++; else test_function_success(errmsg, __LINE__, (void(*)(void*))func, (void*)arg, #test_name, 7, 1)
-#define SAFE_EXPECT_EQ(test_name, func, expected, ...) \
+#define SAFE_WRAPPER(TEST, test_name, func, expected, ...) \
 	if (firstphase){total_functions++;} else { \
 	void* result = NULL; \
 	if (!setjmp(sigsegv_buf)){ \
-		EXPECT_EQ(test_name, func(__VA_ARGS__), expected); \
+		TEST(test_name, func(__VA_ARGS__), expected); \
 	} else { \
 		printf("%s[ SIGSEGV ]%s %s.%s\n", CRED, CRESET, current_test_suite, #test_name); \
 		putchar('\t'); \
 		puts(messages[7]); \
 		failed++;ran++;}}
-#define SAFE_ASSERT_EQ(test_name, func, expected, ...) \
-	if (firstphase){total_functions++;return;} \
-	if (
+		
+#define SAFE_EXPECT_EQ(test_name, func, expected, ...) SAFE_WRAPPER(EXPECT_EQ, test_name, func, expected, __VA_ARGS__)
 
 //Additional functions
 #define PRINT_START(func) print_start(#func);
