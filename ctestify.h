@@ -24,6 +24,9 @@ int ran = 0;
 int assert_failed = 0;
 char* current_test_suite = "";
 jmp_buf sigsegv_buf = {0};
+int stdout_backup = 0;
+int dev_null_fd = 0;
+FILE* ctestify_stdout;
 struct ComparerRet comparerret;
 char* messages[] = {
 	"Expected values equality!",
@@ -111,12 +114,12 @@ int double_comparer(double arg1, double arg2){
 //Function bodies
 #define DEFAULT_BODY CHECK_ASSERT_FAILURE \
     if (strlen(testname) <= 1 || strlen(current_test_suite) <= 1){ \
-        printf("Test name or test suite name can't be null!\n");assert_failed++;return;} \
-	printf("%s%s%s %s.%s\n", CGREEN, "[ RUN     ]", CRESET, current_test_suite, testname); \
+        fprintf(ctestify_stdout, "Test name or test suite name can't be null!\n");assert_failed++;return;} \
+	fprintf(ctestify_stdout, "%s%s%s %s.%s\n", CGREEN, "[ RUN     ]", CRESET, current_test_suite, testname); \
     if (comparerresult){ \
-        printf("%s%s%s %s.%s\n", CGREEN, "[      OK ]", CRESET, current_test_suite, testname); \
+        fprintf(ctestify_stdout, "%s%s%s %s.%s\n", CGREEN, "[      OK ]", CRESET, current_test_suite, testname); \
         successed++;}else{ \
-        printf("%s%s%s %s.%s\n", CRED, "[ FAILURE ]", CRESET, current_test_suite, testname); \
+        fprintf(ctestify_stdout, "%s%s%s %s.%s\n", CRED, "[ FAILURE ]", CRESET, current_test_suite, testname); \
         char buf[256] = {0}; \
         int msg_avail = 0; \
         if (strlen(errmsg) > 1){ \
@@ -132,11 +135,11 @@ int double_comparer(double arg1, double arg2){
 //Small macroses for more easy functions structure, automatizing routines
 #define CHECK_ASSERT_FAILURE if (assert_failed) return;
 #define RESET_COMPARERRET comparerret.args.intargs[0] = 0; comparerret.args.intargs[1] = 0; comparerret.mode = 0;
-#define PRINT_EXPECTED_SIGNED printf("\t%s\n\tExpected: %ld (0x%lx)\n\tActual value of %s: %ld (0x%lx)\n", msg_avail ? buf : messages[index], comparerret.args.intargs[1], comparerret.args.intargs[1], firstarg, comparerret.args.intargs[0], comparerret.args.intargs[0]);
-#define PRINT_EXPECTED_UNSIGNED printf("\t%s\n\tExpected: %lu (0x%lx)\n\tActual value of %s: %lu (0x%lx)\n", msg_avail ? buf : messages[index], comparerret.args.uintargs[1], comparerret.args.uintargs[1], firstarg, comparerret.args.uintargs[0], comparerret.args.uintargs[0]);
-#define PRINT_EXPECTED_FLOAT printf("\t%s\n\tExpected: %f (0x%a)\n\tActual value of %s: %f (0x%a)\n", msg_avail ? buf : messages[index], comparerret.args.floatargs[1], comparerret.args.floatargs[1], firstarg, comparerret.args.floatargs[0], comparerret.args.floatargs[0]);
-#define PRINT_EXPECTED_DOUBLE printf("\t%s\n\tExpected: %lf (0x%a)\n\tActual value of %s: %lf (0x%a)\n", msg_avail ? buf : messages[index], comparerret.args.doubleargs[1], comparerret.args.doubleargs[1], firstarg, comparerret.args.doubleargs[0], comparerret.args.doubleargs[0]);
-#define PRINT_EXPECTED_CHARP printf("\t%s\n\tExpected: %s (0x%p)\n\tActual value of %s: %s (0x%p)\n", msg_avail ? buf : messages[index], comparerret.args.charpargs[1], comparerret.args.charpargs[1], firstarg, comparerret.args.charpargs[0], comparerret.args.charpargs[0]);
+#define PRINT_EXPECTED_SIGNED fprintf(ctestify_stdout, "\t%s\n\tExpected: %ld (0x%lx)\n\tActual value of %s: %ld (0x%lx)\n", msg_avail ? buf : messages[index], comparerret.args.intargs[1], comparerret.args.intargs[1], firstarg, comparerret.args.intargs[0], comparerret.args.intargs[0]);
+#define PRINT_EXPECTED_UNSIGNED fprintf(ctestify_stdout, "\t%s\n\tExpected: %lu (0x%lx)\n\tActual value of %s: %lu (0x%lx)\n", msg_avail ? buf : messages[index], comparerret.args.uintargs[1], comparerret.args.uintargs[1], firstarg, comparerret.args.uintargs[0], comparerret.args.uintargs[0]);
+#define PRINT_EXPECTED_FLOAT fprintf(ctestify_stdout, "\t%s\n\tExpected: %f (0x%a)\n\tActual value of %s: %f (0x%a)\n", msg_avail ? buf : messages[index], comparerret.args.floatargs[1], comparerret.args.floatargs[1], firstarg, comparerret.args.floatargs[0], comparerret.args.floatargs[0]);
+#define PRINT_EXPECTED_DOUBLE fprintf(ctestify_stdout, "\t%s\n\tExpected: %lf (0x%a)\n\tActual value of %s: %lf (0x%a)\n", msg_avail ? buf : messages[index], comparerret.args.doubleargs[1], comparerret.args.doubleargs[1], firstarg, comparerret.args.doubleargs[0], comparerret.args.doubleargs[0]);
+#define PRINT_EXPECTED_CHARP fprintf(ctestify_stdout, "\t%s\n\tExpected: %s (0x%p)\n\tActual value of %s: %s (0x%p)\n", msg_avail ? buf : messages[index], comparerret.args.charpargs[1], comparerret.args.charpargs[1], firstarg, comparerret.args.charpargs[0], comparerret.args.charpargs[0]);
 
 
 //General EXPECT and ASSERT declarations  
@@ -181,11 +184,11 @@ int double_comparer(double arg1, double arg2){
 #define ASSERT_FUNC_SUCCESSM(test_name, func, arg, errmsg) if (firstphase) total_functions++; else test_function_success(errmsg, __LINE__, (void(*)(void*))func, (void*)arg, #test_name, 7, 1)
 #define SAFE_WRAPPER(TEST, test_name, func, expected, ...) \
 	if (firstphase){total_functions++;} else { \
-	void* result = NULL; \
+	void* result = NULL; signal(SIGSEGV, sigsegv_handler); \
 	if (!setjmp(sigsegv_buf)){ \
 		TEST(test_name, func(__VA_ARGS__), expected); \
 	} else { \
-		printf("%s[ SIGSEGV ]%s %s.%s\n", CRED, CRESET, current_test_suite, #test_name); \
+		fprintf(ctestify_stdout, "%s[ SIGSEGV ]%s %s.%s\n", CRED, CRESET, current_test_suite, #test_name); \
 		putchar('\t'); \
 		puts(messages[7]); \
 		failed++;ran++;}}
@@ -229,14 +232,14 @@ void assert_equals(char* errmsg, int32_t line, int comparerresult, char* firstar
 }
 
 void test_function_success(char* errmsg, int32_t line, void(*func)(void*), void* arg, char* testname, int index, int isassert){
-	printf("%s[ RUN     ]%s %s.%s\n", CGREEN, CRESET, current_test_suite, testname);
+	fprintf(ctestify_stdout, "%s[ RUN     ]%s %s.%s\n", CGREEN, CRESET, current_test_suite, testname);
 	if(!setjmp(sigsegv_buf)){
 		(*func)(arg);
 		successed++;
-		printf("%s[      OK ]%s %s.%s\n", CGREEN, CRESET, current_test_suite, testname);
+		fprintf(ctestify_stdout, "%s[      OK ]%s %s.%s\n", CGREEN, CRESET, current_test_suite, testname);
 	}else{
-		printf("%s[ SIGSEGV ]%s %s.%s\n", CRED, CRESET, current_test_suite, testname);
-		printf("\t%s\n", strlen(errmsg) > 1 ? errmsg : messages[index]);
+		fprintf(ctestify_stdout, "%s[ SIGSEGV ]%s %s.%s\n", CRED, CRESET, current_test_suite, testname);
+		fprintf(ctestify_stdout, "\t%s\n", strlen(errmsg) > 1 ? errmsg : messages[index]);
 		failed++;
 	}
 	ran++;
@@ -245,44 +248,47 @@ void test_function_success(char* errmsg, int32_t line, void(*func)(void*), void*
 
 //Actual entry point, instead of the fake one
 int main(){
+    // Setting up local stdout
+    ctestify_stdout = fopen("/dev/tty", "a");
+    if (!ctestify_stdout){ printf(CRED "Failed to acquire local stdout copy!\n" CRESET); return 0;}
     // Testing environment setup
-    printf("%s[=========]%s Setting up testing environment...\n\n", CGREEN, CRESET);
+    fprintf(ctestify_stdout, "%s[=========]%s Setting up testing environment...\n\n", CGREEN, CRESET);
     signal(SIGSEGV, sigsegv_handler);
     total_functions = 0;
     time_t start, end;
     // Disable stdout 
-    int stdout_backup = dup(fileno(stdout));
-    int dev_null_fd = open("/dev/null", O_WRONLY);
+    stdout_backup = dup(fileno(stdout));
+    dev_null_fd = open("/dev/null", O_WRONLY);
     dup2(dev_null_fd, fileno(stdout));
-    close(dev_null_fd);
     test_main();
     // Return stdout back 
     dup2(stdout_backup, fileno(stdout));
-    close(stdout_backup);
     if (total_functions == 0){
-        printf(CRED "No tests detected!\n" CRESET);
+        fprintf(ctestify_stdout, CRED "No tests detected!\n" CRESET);
         return 0;
     }
     firstphase = 0;
     if (TestingEnvironmentSetUp()){
-        printf(CRED "Environment setup failure!\n" CRESET);
+        fprintf(ctestify_stdout, CRED "Environment setup failure!\n" CRESET);
         return 1;
     }
     // Running tests
-    printf("%s[=========]%s Running %d tests\n", CGREEN, CRESET, total_functions);
+    fprintf(ctestify_stdout, "%s[=========]%s Running %d tests\n", CGREEN, CRESET, total_functions);
     start = clock();
     test_main();
     end = clock();
     // Tests finalization, print results and destroy testing environment
     long double total_time = ((double)(end - start)) / CLOCKS_PER_SEC * 1000;
-    if (successed == 0) printf(CRED);
-    else if (failed == 0) printf(CGREEN);
-    else printf(CYELLOW);
-    printf("[=========]%s %d tests finished ", CRESET, ran);
-    printf("(%.3Lfms total)\n\n", total_time);
-    printf("%s[=========]%s Destroying testing environment...\n", CGREEN, CRESET);
+    if (successed == 0) fprintf(ctestify_stdout, CRED);
+    else if (failed == 0) fprintf(ctestify_stdout, CGREEN);
+    else fprintf(ctestify_stdout, CYELLOW);
+    fprintf(ctestify_stdout, "[=========]%s %d tests finished ", CRESET, ran);
+    fprintf(ctestify_stdout, "(%.3Lfms total)\n\n", total_time);
+    fprintf(ctestify_stdout, "%s[=========]%s Destroying testing environment...\n", CGREEN, CRESET);
     if (TestingEnvironmentDestroy())
-        printf(CRED "Testing environment destroy failure!\n" CRESET);
-    if (successed) printf("%s[ SUCCESS ]%s %d tests.\n", CGREEN, CRESET, successed);
-    if (failed) printf("%s[ FAILURE ]%s %d tests.\n", CRED, CRESET, failed);
+        fprintf(ctestify_stdout, CRED "Testing environment destroy failure!\n" CRESET);
+    close(stdout_backup);
+    close(dev_null_fd);
+    if (successed) fprintf(ctestify_stdout, "%s[ SUCCESS ]%s %d tests.\n", CGREEN, CRESET, successed);
+    if (failed) fprintf(ctestify_stdout, "%s[ FAILURE ]%s %d tests.\n", CRED, CRESET, failed);
 }
