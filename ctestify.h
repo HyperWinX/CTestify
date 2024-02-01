@@ -141,9 +141,19 @@ int double_comparer(double arg1, double arg2){
 #define PRINT_EXPECTED_DOUBLE fprintf(ctestify_stdout, "\t%s\n\tExpected: %lf (0x%a)\n\tActual value of %s: %lf (0x%a)\n", msg_avail ? buf : messages[index], comparerret.args.doubleargs[1], comparerret.args.doubleargs[1], firstarg, comparerret.args.doubleargs[0], comparerret.args.doubleargs[0]);
 #define PRINT_EXPECTED_CHARP fprintf(ctestify_stdout, "\t%s\n\tExpected: %s (0x%p)\n\tActual value of %s: %s (0x%p)\n", msg_avail ? buf : messages[index], comparerret.args.charpargs[1], comparerret.args.charpargs[1], firstarg, comparerret.args.charpargs[0], comparerret.args.charpargs[0]);
 
+#define SAFE_WRAPPER(errmsg, test_name, value, expected, index) \
+	if (firstphase){total_functions++;} else { \
+	void* result = NULL; signal(SIGSEGV, sigsegv_handler); \
+	if (!setjmp(sigsegv_buf)){ \
+		expect_equals(errmsg, __LINE__, COMPARER(value, expected), #value, #expected, test_name, index); \
+	} else { \
+		fprintf(ctestify_stdout, "%s[ SIGSEGV ]%s %s.%s\n", CRED, CRESET, current_test_suite, test_name); \
+		putchar('\t'); \
+		puts(messages[7]); \
+		failed++;ran++;}}
 
 //General EXPECT and ASSERT declarations  
-#define EXPECT_EQ(test_name, value, expected) if (firstphase) total_functions++; else expect_equals("", __LINE__, COMPARER(value, expected), #value, #expected, #test_name, 0)
+#define EXPECT_EQ(test_name, value, expected) if (firstphase) total_functions++; else SAFE_WRAPPER("", #test_name, value, expected, 0)
 #define ASSERT_EQ(test_name, value, expected) if (firstphase) total_functions++; else assert_equals("", __LINE__, COMPARER(value, expected), #value, #expected, #test_name, 0)
 #define EXPECT_EQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else expect_equals(errmsg, __LINE__, COMPARER(value, expected), #value, #expected, #test_name, 0)
 #define ASSERT_EQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else assert_equals(errmsg, __LINE__, COMPARER(value, expected), #value, #expected, #test_name, 0)
@@ -182,16 +192,7 @@ int double_comparer(double arg1, double arg2){
 #define EXPECT_FUNC_SUCCESSM(test_name, func, arg, errmsg) if (firstphase) total_functions++; else test_function_success(errmsg, __LINE__, (void(*)(void*))func, (void*)arg, #test_name, 7, 0)
 #define ASSERT_FUNC_SUCCESS(test_name, func, arg) if (firstphase) total_functions++; else test_function_success("", __LINE__, (void(*)(void*))func, (void*)arg, #test_name, 7, 1)
 #define ASSERT_FUNC_SUCCESSM(test_name, func, arg, errmsg) if (firstphase) total_functions++; else test_function_success(errmsg, __LINE__, (void(*)(void*))func, (void*)arg, #test_name, 7, 1)
-#define SAFE_WRAPPER(TEST, test_name, func, expected, ...) \
-	if (firstphase){total_functions++;} else { \
-	void* result = NULL; signal(SIGSEGV, sigsegv_handler); \
-	if (!setjmp(sigsegv_buf)){ \
-		TEST(test_name, func(__VA_ARGS__), expected); \
-	} else { \
-		fprintf(ctestify_stdout, "%s[ SIGSEGV ]%s %s.%s\n", CRED, CRESET, current_test_suite, #test_name); \
-		putchar('\t'); \
-		puts(messages[7]); \
-		failed++;ran++;}}
+
 		
 #define SAFE_EXPECT_EQ(test_name, func, expected, ...) SAFE_WRAPPER(EXPECT_EQ, test_name, func, expected, __VA_ARGS__)
 
