@@ -48,6 +48,12 @@ typedef enum Mode{
     CharPointer
 } Mode;
 
+typedef enum ComparerResult{
+    EQ=0,
+	LESS=1,
+	BIGGER=2e
+} ComparerResult;
+
 union ComparerArgs{
     uint64_t uintargs[2];
     int64_t intargs[2];
@@ -75,12 +81,14 @@ struct ComparerRet{
 		float: float_comparer, \
 		double: double_comparer)(arg1, arg2)
 
-int signed_int_comparer(int64_t arg1, int64_t arg2){
+ComparerResult signed_int_comparer(int64_t arg1, int64_t arg2){
     comparerret.args.intargs[0] = arg1;
     comparerret.args.intargs[1] = arg2;
     comparerret.mode = SignedInt;
 
-    return arg1 == arg2;
+	if (arg1 == arg2) return EQ;
+	else if (arg1 > arg2) return BIGGER;
+	else return LESS;
 }
 int unsigned_int_comparer(uint64_t arg1, uint64_t arg2){
     comparerret.args.uintargs[0] = arg1;
@@ -115,7 +123,6 @@ int double_comparer(double arg1, double arg2){
 #define DEFAULT_BODY CHECK_ASSERT_FAILURE \
     if (strlen(testname) <= 1 || strlen(current_test_suite) <= 1){ \
         fprintf(ctestify_stdout, "Test name or test suite name can't be null!\n");assert_failed++;return;} \
-	fprintf(ctestify_stdout, "%s%s%s %s.%s\n", CGREEN, "[ RUN     ]", CRESET, current_test_suite, testname); \
     if (comparerresult){ \
         fprintf(ctestify_stdout, "%s%s%s %s.%s\n", CGREEN, "[      OK ]", CRESET, current_test_suite, testname); \
         successed++;}else{ \
@@ -143,14 +150,13 @@ int double_comparer(double arg1, double arg2){
 
 #define SAFE_WRAPPER(errmsg, test_name, value, expected, index) \
 	if (firstphase){total_functions++;} else { \
+    fprintf(ctestify_stdout, "%s%s%s %s.%s\n", CGREEN, "[ RUN     ]", CRESET, current_test_suite, test_name); \
 	void* result = NULL; signal(SIGSEGV, sigsegv_handler); \
 	if (!setjmp(sigsegv_buf)){ \
 		expect_equals(errmsg, __LINE__, COMPARER(value, expected), #value, #expected, test_name, index); \
 	} else { \
-		fprintf(ctestify_stdout, "%s[ SIGSEGV ]%s %s.%s\n", CRED, CRESET, current_test_suite, test_name); \
-		putchar('\t'); \
-		puts(messages[7]); \
-		failed++;ran++;}}
+		fprintf(ctestify_stdout, "%s[ SIGSEGV ]%s %s.%s\n\t%s\n", CRED, CRESET, current_test_suite, test_name, messages[7]); \
+		assert_failed++;ran++;}}
 
 //General EXPECT and ASSERT declarations  
 #define EXPECT_EQ(test_name, value, expected) if (firstphase) total_functions++; else SAFE_WRAPPER("", #test_name, value, expected, 0)
