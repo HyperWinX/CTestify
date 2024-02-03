@@ -51,8 +51,18 @@ typedef enum Mode{
 typedef enum ComparerResult{
     EQ=0,
 	LESS=1,
-	BIGGER=2e
+	BIGGER=2
 } ComparerResult;
+
+typedef enum Test{
+    EX_EQ,
+	EX_TRUE,
+	EX_FALSE,
+	EX_BIG,
+	EX_LESS,
+	EX_BIGEQ,
+	EX_LESSEQ
+} Test;
 
 union ComparerArgs{
     uint64_t uintargs[2];
@@ -95,35 +105,60 @@ int unsigned_int_comparer(uint64_t arg1, uint64_t arg2){
     comparerret.args.uintargs[1] = arg2;
     comparerret.mode = UnsignedInt;
 
-    return arg1 == arg2;
+	if (arg1 == arg2) return EQ;
+	else if (arg1 > arg2) return BIGGER;
+	else return LESS;
 }
 int str_comparer(char* arg1, char* arg2){
     comparerret.args.charpargs[0] = arg1;
     comparerret.args.charpargs[1] = arg2;
     comparerret.mode = CharPointer;
 
-    return !strcmp(arg1, arg2);
+    if (!strcmp(arg1, arg2)) return EQ;
+	else return LESS;
 }
 int float_comparer(float arg1, float arg2){
     comparerret.args.floatargs[0] = arg1;
     comparerret.args.floatargs[1] = arg2;
     comparerret.mode = Float;
 
-    return arg1 == arg2;
+    if (arg1 == arg2) return EQ;
+	else if (arg1 > arg2) return BIGGER;
+	else return LESS;
 }
 int double_comparer(double arg1, double arg2){
     comparerret.args.floatargs[0] = arg1;
     comparerret.args.floatargs[1] = arg2;
     comparerret.mode = Double;
 
-    return arg1 == arg2;
+    if (arg1 == arg2) return EQ;
+	else if (arg1 > arg2) return BIGGER;
+	else return LESS;
 }
 
 //Function bodies
+#define RETISGOOD(test, result) \
+		switch(test){ \
+				case EX_EQ: \
+						result == EQ ? 1 : 0; break; \
+				case EX_TRUE: \
+						result == BIGGER || result == EQ ? 1 : 0; break; \
+				case EX_FALSE: \
+						result == BIGGER ? 1 : 0; break; \
+				case EX_LESS: \
+						result == LESS ? 1 : 0; break; \
+				case EX_BIG: \
+						result == BIGGER ? 1 : 0; break; \
+				case EX_BIGEQ: \
+						result == BIGGER || result == EQ ? 1 : 0; break; \
+				case EX_LESSEQ: \
+						result == LESS || result == EQ ? 1 : 0; break;}
+
+
 #define DEFAULT_BODY CHECK_ASSERT_FAILURE \
     if (strlen(testname) <= 1 || strlen(current_test_suite) <= 1){ \
         fprintf(ctestify_stdout, "Test name or test suite name can't be null!\n");assert_failed++;return;} \
-    if (comparerresult){ \
+    if (RETISGOOD(test, comparerresult)){ \
         fprintf(ctestify_stdout, "%s%s%s %s.%s\n", CGREEN, "[      OK ]", CRESET, current_test_suite, testname); \
         successed++;}else{ \
         fprintf(ctestify_stdout, "%s%s%s %s.%s\n", CRED, "[ FAILURE ]", CRESET, current_test_suite, testname); \
@@ -148,21 +183,21 @@ int double_comparer(double arg1, double arg2){
 #define PRINT_EXPECTED_DOUBLE fprintf(ctestify_stdout, "\t%s\n\tExpected: %lf (0x%a)\n\tActual value of %s: %lf (0x%a)\n", msg_avail ? buf : messages[index], comparerret.args.doubleargs[1], comparerret.args.doubleargs[1], firstarg, comparerret.args.doubleargs[0], comparerret.args.doubleargs[0]);
 #define PRINT_EXPECTED_CHARP fprintf(ctestify_stdout, "\t%s\n\tExpected: %s (0x%p)\n\tActual value of %s: %s (0x%p)\n", msg_avail ? buf : messages[index], comparerret.args.charpargs[1], comparerret.args.charpargs[1], firstarg, comparerret.args.charpargs[0], comparerret.args.charpargs[0]);
 
-#define SAFE_WRAPPER(errmsg, test_name, value, expected, index) \
+#define SAFE_WRAPPER(func, line, errmsg, test_name, value, expected, index) \
 	if (firstphase){total_functions++;} else { \
     fprintf(ctestify_stdout, "%s%s%s %s.%s\n", CGREEN, "[ RUN     ]", CRESET, current_test_suite, test_name); \
 	void* result = NULL; signal(SIGSEGV, sigsegv_handler); \
 	if (!setjmp(sigsegv_buf)){ \
-		expect_equals(errmsg, __LINE__, COMPARER(value, expected), #value, #expected, test_name, index); \
+		func(errmsg, line, COMPARER(value, expected), #value, #expected, test_name, index); \
 	} else { \
 		fprintf(ctestify_stdout, "%s[ SIGSEGV ]%s %s.%s\n\t%s\n", CRED, CRESET, current_test_suite, test_name, messages[7]); \
 		assert_failed++;ran++;}}
 
 //General EXPECT and ASSERT declarations  
-#define EXPECT_EQ(test_name, value, expected) if (firstphase) total_functions++; else SAFE_WRAPPER("", #test_name, value, expected, 0)
-#define ASSERT_EQ(test_name, value, expected) if (firstphase) total_functions++; else assert_equals("", __LINE__, COMPARER(value, expected), #value, #expected, #test_name, 0)
-#define EXPECT_EQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else expect_equals(errmsg, __LINE__, COMPARER(value, expected), #value, #expected, #test_name, 0)
-#define ASSERT_EQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else assert_equals(errmsg, __LINE__, COMPARER(value, expected), #value, #expected, #test_name, 0)
+#define EXPECT_EQ(test_name, value, expected) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, "", #test_name, value, expected, 0)
+#define ASSERT_EQ(test_name, value, expected) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, "", #test_name, value, expected, 0)
+#define EXPECT_EQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, "", #test_name, value, expected, 0)
+#define ASSERT_EQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, "", #test_name, value, expected, 0)
 
 #define EXPECT_TRUE(test_name, val) if (firstphase) total_functions++; else expect_equals("", __LINE__, val > 0, #val, "", #test_name, 1)
 #define ASSERT_TRUE(test_name, val) if (firstphase) total_functions++; else assert_equals("", __LINE__, val > 0, #val, "", #test_name, 1)
@@ -227,12 +262,12 @@ int TestingEnvironmentDestroy(){return 0;}
 
 //All testing functions
 
-void expect_equals(char* errmsg, int32_t line, int comparerresult, char* firstarg, char* secondarg, char* testname, int index){
+void expect_equals(char* errmsg, int32_t line, ComparerResult comparerresult, Test test, char* firstarg, char* secondarg, char* testname, int index){
     DEFAULT_BODY
     RESET_COMPARERRET
 }
 
-void assert_equals(char* errmsg, int32_t line, int comparerresult, char* firstarg, char* secondarg, char* testname, int index){
+void assert_equals(char* errmsg, int32_t line, ComparerResult comparerresult, Test test, char* firstarg, char* secondarg, char* testname, int index){
     DEFAULT_BODY
     if (!comparerresult) assert_failed++;
     RESET_COMPARERRET
