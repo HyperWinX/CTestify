@@ -26,18 +26,18 @@ void test_main(){
 
     EXPECT_EQ(EQTEST1, 5, 5);
     EXPECT_EQM(EQTEST2, 5, 5, "Custom error message for expect_eq()!");
-    EXPECT_EQ(EQTEST1, 5, 4);
-    EXPECT_EQM(EQTEST2, 5, 4, "Custom error message for expect_eq()!");
+    EXPECT_EQ(EQTEST3, 5, 4);
+    EXPECT_EQM(EQTEST4, 5, 4, "Custom error message for expect_eq()!");
 
     EXPECT_TRUE(TRUETEST1, 5);
     EXPECT_TRUEM(TRUETEST2, 5, "Custom error message for expect_true()!");
-    EXPECT_TRUE(TRUETEST1, 0);
-    EXPECT_TRUEM(TRUETEST2, 0, "Custom error message for expect_true()!");
+    EXPECT_TRUE(TRUETEST3, 0);
+    EXPECT_TRUEM(TRUETEST4, 0, "Custom error message for expect_true()!");
 
     EXPECT_FALSE(FALSETEST1, 0);
     EXPECT_FALSEM(FALSETEST2, 0, "Custom error message for expect_false()!");
-    EXPECT_FALSE(FALSETEST1, 5);
-    EXPECT_FALSEM(FALSETEST2, 5, "Custom error message for expect_false()!");
+    EXPECT_FALSE(FALSETEST3, 5);
+    EXPECT_FALSEM(FALSETEST4, 5, "Custom error message for expect_false()!");
 
     EXPECT_BIGGER(BIGGERTEST1, 5, 1);
     EXPECT_BIGGERM(BIGGERTEST2, 5, 1, "Custom error message for expect_bigger()!");
@@ -60,9 +60,5 @@ void test_main(){
     EXPECT_LESSOREQM(LESSOREQTEST4, 10, 5, "Custom error message for expect_less()!");
 
     EXPECT_EQ(SAFEFUNCTEST1, func(), 5);
-
-    EXPECT_FUNC_SUCCESS(FUNCTEST1, fucking_function_test, 0);
-    EXPECT_FUNC_SUCCESSM(FUNCTEST2, fucking_function_test, 0, "Custom error message for expect_function_test()!");
-    EXPECT_FUNC_SUCCESS(FUNCTEST3, func, 0);
-    EXPECT_FUNC_SUCCESSM(FUNCTEST4, func, 0, "Custom error message for expect_function_success()!");
+	EXPECT_EQ(TEST, 9, 0);
 }
