@@ -24,10 +24,9 @@ int ran = 0;
 int assert_failed = 0;
 char* current_test_suite = "";
 jmp_buf sigsegv_buf = {0};
-int stdout_backup = 0;
-int dev_null_fd = 0;
 FILE* ctestify_stdout;
 struct ComparerRet comparerret;
+time_t tstart, tend = {0};
 char* messages[] = {
 	"Expected values equality!",
 	"Expected true value!",
@@ -161,9 +160,11 @@ int RETISGOOD(Test test, ComparerResult result){
         fprintf(ctestify_stdout, "Test name or test suite name can't be null!\n");assert_failed++;return;} \
     ran++; \
     if (RETISGOOD(test, comparerresult)){ \
-        fprintf(ctestify_stdout, "%s%s%s %s.%s\n", CGREEN, "[      OK ]", CRESET, current_test_suite, testname); \
+		tend = clock(); \
+        fprintf(ctestify_stdout, "%s%s%s %s.%s (%.3Lfms)\n", CGREEN, "[      OK ]", CRESET, current_test_suite, testname, (long double)((tend - tstart) / CLOCKS_PER_SEC * 1000)); \
         successed++;}else{ \
-        fprintf(ctestify_stdout, "%s%s%s %s.%s\n", CRED, "[ FAILURE ]", CRESET, current_test_suite, testname); \
+		tend = clock(); \
+        fprintf(ctestify_stdout, "%s%s%s %s.%s (%.3Lf)\n", CRED, "[ FAILURE ]", CRESET, current_test_suite, testname, (long double)((tend - tstart) / CLOCKS_PER_SEC * 1000)); \
 		failed++; \
         int msg_avail = 0; \
         if (strlen(errmsg) > 1) \
@@ -191,11 +192,13 @@ int RETISGOOD(Test test, ComparerResult result){
 #define SAFE_WRAPPER(func, line, errmsg, test_name, test, value, expected, index) \
 	if (firstphase){total_functions++;} else if (!assert_failed) { \
     fprintf(ctestify_stdout, "%s%s%s %s.%s\n", CGREEN, "[ RUN     ]", CRESET, current_test_suite, test_name); \
+    tstart = clock(); \
 	void* result = NULL; signal(SIGSEGV, sigsegv_handler); \
 	if (!setjmp(sigsegv_buf)){ \
 		func(errmsg, line, COMPARER(value, expected), test, #value, #expected, test_name, index); \
 	} else { \
-		fprintf(ctestify_stdout, "%s[ SIGSEGV ]%s %s.%s\n\t%s\n", CRED, CRESET, current_test_suite, test_name, messages[7]); \
+		tend = clock(); \
+		fprintf(ctestify_stdout, "%s[ SIGSEGV ]%s %s.%s (%.3Lfms)\n\t%s\n", CRED, CRESET, current_test_suite, test_name, (long double)((tend - tstart) / CLOCKS_PER_SEC * 1000), messages[7]); \
 		assert_failed++;failed++;ran++;}}
 
 //General EXPECT and ASSERT declarations  
@@ -281,12 +284,14 @@ int main(){
     total_functions = 0;
     time_t start, end;
     // Disable stdout 
-    stdout_backup = dup(fileno(stdout));
-    dev_null_fd = open("/dev/null", O_WRONLY);
+    int stdout_backup = dup(fileno(stdout));
+    int dev_null_fd = open("/dev/null", O_WRONLY);
     dup2(dev_null_fd, fileno(stdout));
     test_main();
     // Return stdout back 
     dup2(stdout_backup, fileno(stdout));
+	close(dev_null_fd);
+	close(stdout_backup);
     if (total_functions == 0){
         fprintf(ctestify_stdout, CRED "No tests detected!\n" CRESET);
         return 0;
@@ -311,8 +316,6 @@ int main(){
     fprintf(ctestify_stdout, "%s[=========]%s Destroying testing environment...\n", CGREEN, CRESET);
     if (TestingEnvironmentDestroy())
         fprintf(ctestify_stdout, CRED "Testing environment destroy failure!\n" CRESET);
-    close(stdout_backup);
-    close(dev_null_fd);
     if (successed) fprintf(ctestify_stdout, "%s[ SUCCESS ]%s %d tests.\n", CGREEN, CRESET, successed);
     if (failed) fprintf(ctestify_stdout, "%s[ FAILURE ]%s %d tests.\n", CRED, CRESET, failed);
 }
