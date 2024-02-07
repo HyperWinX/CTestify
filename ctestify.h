@@ -195,7 +195,7 @@ int RETISGOOD(Test test, ComparerResult result){
             case Float:{PRINT_EXPECTED_FLOAT break;} \
             case Double:{PRINT_EXPECTED_DOUBLE break;} \
             case CharPointer:{PRINT_EXPECTED_CHARP break;} \
-			case VoidPointer:{if(test == EX_EQ){PRINT_EXPECTEDEQ_VOIDP}else if(test == EX_VALPTR){PRINT_EXPECTED_VOIDP}}}
+			case VoidPointer:{if(test == EX_EQ){PRINT_EXPECTEDEQ_VOIDP}else if(test == EX_VALPTR){PRINT_EXPECTED_VOIDP}}}}
 
 //Small macroses for more easy functions structure, automatizing routines
 #define EXTENDEDMSG_NREQUIRED(test) (test == EX_TRUE || test == EX_FALSE)
