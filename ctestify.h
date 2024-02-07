@@ -35,7 +35,8 @@ char* messages[] = {
 	"Expected less value!",
 	"Expected bigger or equal value!",
 	"Expected less or equal value!",
-	"Expected function success, but it caused a segfault!"
+	"Expected function success, but it caused a segfault!",
+	"Expected valid pointer!"
 };
 
 //Unions, enums and structs 
@@ -44,7 +45,8 @@ typedef enum Mode{
     UnsignedInt,
     Float,
     Double,
-    CharPointer
+    CharPointer,
+	VoidPointer
 } Mode;
 
 typedef enum ComparerResult{
@@ -60,7 +62,8 @@ typedef enum Test{
 	EX_BIG,
 	EX_LESS,
 	EX_BIGEQ,
-	EX_LESSEQ
+	EX_LESSEQ,
+	EX_VALPTR
 } Test;
 
 union ComparerArgs{
@@ -69,6 +72,7 @@ union ComparerArgs{
     float floatargs[2];
     double doubleargs[2];
     char* charpargs[2];
+	void* voidpargs[2];
 };
 
 struct ComparerRet{
@@ -88,6 +92,7 @@ struct ComparerRet{
 		uint64_t: unsigned_int_comparer, \
 		char*: str_comparer, \
 		float: float_comparer, \
+		void*: ptr_comparer, \
 		double: double_comparer)(arg1, arg2)
 
 ComparerResult signed_int_comparer(int64_t arg1, int64_t arg2){
@@ -126,6 +131,14 @@ ComparerResult float_comparer(float arg1, float arg2){
 	else if (arg1 > arg2) return BIGGER;
 	else return LESS;
 }
+ComparerResult ptr_comparer(void* arg1, void* arg2){
+	comparerret.args.voidpargs[0] = arg1;
+	comparerret.args.voidpargs[1] = arg2;
+	comparerret.mode = VoidPointer;
+
+	if (arg1 == arg2) return EQ;
+	else return BIGGER;
+}
 ComparerResult double_comparer(double arg1, double arg2){
     comparerret.args.floatargs[0] = arg1;
     comparerret.args.floatargs[1] = arg2;
@@ -138,21 +151,25 @@ ComparerResult double_comparer(double arg1, double arg2){
 
 //Function bodies
 int RETISGOOD(Test test, ComparerResult result){
-		switch(test){
-				case EX_EQ:
-						return result == EQ ? 1 : 0;
-				case EX_TRUE: 
-						return result == BIGGER ? 1 : 0;
-				case EX_FALSE:
-						return result == EQ ? 1 : 0;
-				case EX_LESS:
-						return result == LESS ? 1 : 0;
-				case EX_BIG:
-						return result == BIGGER ? 1 : 0;
-				case EX_BIGEQ:
-						return result == BIGGER || result == EQ ? 1 : 0;
-				case EX_LESSEQ:
-						return result == LESS || result == EQ ? 1 : 0;}}
+	switch(test){
+		case EX_EQ:
+			return result == EQ;
+		case EX_TRUE: 
+			return result == BIGGER;
+		case EX_FALSE:
+			return result == EQ;
+		case EX_LESS:
+			return result == LESS;
+		case EX_BIG:
+			return result == BIGGER;
+		case EX_BIGEQ:
+			return result == BIGGER || result == EQ;
+		case EX_LESSEQ:
+			return result == LESS || result == EQ;
+		case EX_VALPTR:
+			return result == BIGGER;
+	}
+}
 
 
 #define DEFAULT_BODY CHECK_ASSERT_FAILURE \
@@ -177,7 +194,8 @@ int RETISGOOD(Test test, ComparerResult result){
             case UnsignedInt:{PRINT_EXPECTED_UNSIGNED break;} \
             case Float:{PRINT_EXPECTED_FLOAT break;} \
             case Double:{PRINT_EXPECTED_DOUBLE break;} \
-            case CharPointer:{PRINT_EXPECTED_CHARP break;}}}
+            case CharPointer:{PRINT_EXPECTED_CHARP break;} \
+			case VoidPointer:{if(test == EX_EQ){PRINT_EXPECTEDEQ_VOIDP}else if(test == EX_VALPTR){PRINT_EXPECTED_VOIDP}}}
 
 //Small macroses for more easy functions structure, automatizing routines
 #define EXTENDEDMSG_NREQUIRED(test) (test == EX_TRUE || test == EX_FALSE)
@@ -187,7 +205,9 @@ int RETISGOOD(Test test, ComparerResult result){
 #define PRINT_EXPECTED_UNSIGNED fprintf(ctestify_stdout, "\tExpected: %lu (0x%lx)\n\tActual value of %s: %lu (0x%lx)\n", comparerret.args.uintargs[1], comparerret.args.uintargs[1], firstarg, comparerret.args.uintargs[0], comparerret.args.uintargs[0]);
 #define PRINT_EXPECTED_FLOAT fprintf(ctestify_stdout, "\tExpected: %f (0x%a)\n\tActual value of %s: %f (0x%a)\n", comparerret.args.floatargs[1], comparerret.args.floatargs[1], firstarg, comparerret.args.floatargs[0], comparerret.args.floatargs[0]);
 #define PRINT_EXPECTED_DOUBLE fprintf(ctestify_stdout, "\tExpected: %lf (0x%a)\n\tActual value of %s: %lf (0x%a)\n", comparerret.args.doubleargs[1], comparerret.args.doubleargs[1], firstarg, comparerret.args.doubleargs[0], comparerret.args.doubleargs[0]);
-#define PRINT_EXPECTED_CHARP fprintf(ctestify_stdout, "\tExpected: %s (0x%p)\n\tActual value of %s: %s (0x%p)\n", comparerret.args.charpargs[1], comparerret.args.charpargs[1], firstarg, comparerret.args.charpargs[0], comparerret.args.charpargs[0]);
+#define PRINT_EXPECTED_CHARP fprintf(ctestify_stdout, "\tExpected: '%s' (0x%p)\n\tActual value of %s: '%s' (0x%p)\n", comparerret.args.charpargs[1], comparerret.args.charpargs[1], firstarg, comparerret.args.charpargs[0], comparerret.args.charpargs[0]);
+#define PRINT_EXPECTEDEQ_VOIDP fprintf(ctestify_stdout, "Expected: %p\n\tActual pointer value: %p\n", comparerret.args.voidpargs[1], comparerret.args.voidpargs[0]);
+#define PRINT_EXPECTED_VOIDP fprintf(ctestify_stdout, "\tActual pointer value: %p\n", comparerret.args.voidpargs[0]);
 
 #define SAFE_WRAPPER(func, line, errmsg, test_name, test, value, expected, index) \
 	if (firstphase){total_functions++;} else if (!assert_failed) { \
@@ -236,6 +256,11 @@ int RETISGOOD(Test test, ComparerResult result){
 #define ASSERT_LESSOREQ(test_name, value, expected) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, "", #test_name, EX_LESSEQ, value, expected, 6)
 #define EXPECT_LESSOREQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, errmsg, #test_name, EX_LESSEQ, value, expected, 6)
 #define ASSERT_LESSOREQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, errmsg, #test_name, EX_LESSEQ, value, expected, 6)
+
+#define EXPECT_VALIDPTR(test_name, ptr) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, "", #test_name, EX_VALPTR, ptr, 0, 7)
+#define ASSERT_VALIDPTR(test_name, ptr) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, "", #test_name, EX_VALPTR, ptr, 0, 7)
+#define EXPECT_VALIDPTRM(test_name, ptr, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, errmsg, #test_name, EX_VALPTR, ptr, 0, 7)
+#define ASSERT_VALIDPTRM(test_name, ptr, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, errmsg, #test_name, EX_VALPTR, ptr, 0, 7)
 
 //Additional functions
 #define PRINT_START(func) print_start(#func);
@@ -313,7 +338,7 @@ int main(){
     else fprintf(ctestify_stdout, CYELLOW);
     fprintf(ctestify_stdout, "[=========]%s %d tests finished ", CRESET, ran);
     fprintf(ctestify_stdout, "(%.3Lfms total)\n\n", total_time);
-    fprintf(ctestify_stdout, "%s[=========]%s Destroying testing environment...\n", CGREEN, CRESET);
+    fprintf(ctestify_stdout, "%s[=========]%s Destroying testing environment...\n\n", CGREEN, CRESET);
     if (TestingEnvironmentDestroy())
         fprintf(ctestify_stdout, CRED "Testing environment destroy failure!\n" CRESET);
     if (successed) fprintf(ctestify_stdout, "%s[ SUCCESS ]%s %d tests.\n", CGREEN, CRESET, successed);
