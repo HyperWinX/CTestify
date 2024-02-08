@@ -260,10 +260,10 @@ int RETISGOOD(Test test, ComparerResult result){
 #define EXPECT_LESSOREQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, errmsg, #test_name, EX_LESSEQ, value, expected, 6)
 #define ASSERT_LESSOREQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, errmsg, #test_name, EX_LESSEQ, value, expected, 6)
 
-#define EXPECT_VALIDPTR(test_name, ptr) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, "", #test_name, EX_VALPTR, ptr, 0, 7)
-#define ASSERT_VALIDPTR(test_name, ptr) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, "", #test_name, EX_VALPTR, ptr, 0, 7)
-#define EXPECT_VALIDPTRM(test_name, ptr, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, errmsg, #test_name, EX_VALPTR, ptr, 0, 7)
-#define ASSERT_VALIDPTRM(test_name, ptr, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, errmsg, #test_name, EX_VALPTR, ptr, 0, 7)
+#define EXPECT_VALIDPTR(test_name, ptr) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, "", #test_name, EX_VALPTR, ptr, 0, 8)
+#define ASSERT_VALIDPTR(test_name, ptr) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, "", #test_name, EX_VALPTR, ptr, 0, 8)
+#define EXPECT_VALIDPTRM(test_name, ptr, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, errmsg, #test_name, EX_VALPTR, ptr, 0, 8)
+#define ASSERT_VALIDPTRM(test_name, ptr, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, errmsg, #test_name, EX_VALPTR, ptr, 0, 8)
 
 //Additional functions
 #define PRINT_START(func) print_start(#func);
@@ -339,11 +339,12 @@ int main(){
     if (successed == 0) fprintf(ctestify_stdout, CRED);
     else if (failed == 0) fprintf(ctestify_stdout, CGREEN);
     else fprintf(ctestify_stdout, CYELLOW);
-    fprintf(ctestify_stdout, "[=========]%s %d tests finished ", CRESET, ran);
-    fprintf(ctestify_stdout, "(%.3Lf%s total)\n\n", total_time < 1000 ? total_time * 1000 : total_time, total_time < 1000 ? "ms" : "s");
+    fprintf(ctestify_stdout, "[=========]%s %d out of %d tests finished ", CRESET, ran, total_functions);
+    fprintf(ctestify_stdout, "(%.3Lf%s total)\n", total_time < 1000 ? total_time * 1000 : total_time, total_time < 1000 ? "ms" : "s");
     fprintf(ctestify_stdout, "%s[=========]%s Destroying testing environment...\n\n", CGREEN, CRESET);
     if (TestingEnvironmentDestroy())
-        fprintf(ctestify_stdout, CRED "Testing environment destroy failure!\n" CRESET);
+        fprintf(ctestify_stdout, CRED "\nTesting environment destroy failure!\n" CRESET);
+	else fputc('\n', ctestify_stdout);
     if (successed) fprintf(ctestify_stdout, "%s[ SUCCESS ]%s %d tests.\n", CGREEN, CRESET, successed);
     if (failed) fprintf(ctestify_stdout, "%s[ FAILURE ]%s %d tests.\n", CRED, CRESET, failed);
 }
