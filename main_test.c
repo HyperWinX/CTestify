@@ -59,6 +59,15 @@ void test_main(){
     EXPECT_LESSOREQ(LESSOREQTEST3, 10, 5);
     EXPECT_LESSOREQM(LESSOREQTEST4, 10, 5, "Custom error message for expect_less()!");
 
+	EXPECT_EQ(VOIDPTEST1, (void*)1, (void*)1);
+	EXPECT_EQM(VOIDPTEST2, (void*)1, (void*)1, "Custom error message!");
+	EXPECT_EQ(VOIDPTEST3, (void*)2, (void*)1)
+	EXPECT_EQM(VOIDPTEST4, (void*)2, (void*)1, "Custom error message!");
+
+	EXPECT_VALIDPTR(VOIDPTEST5, (void*)5);
+	EXPECT_VALIDPTRM(VOIDPTEST6, (void*)5, "Custom error message for expect_validptr()!");
+	EXPECT_VALIDPTR(VOIDPTEST7, (void*)0);
+	EXPECT_VALIDPTRM(VOIDPTEST8, (void*)0, "Custom error message for expect_validptr()!");
     EXPECT_EQ(SAFEFUNCTEST1, func(), 5);
 	EXPECT_EQ(TEST, 9, 0);
 }

@@ -178,10 +178,12 @@ int RETISGOOD(Test test, ComparerResult result){
     ran++; \
     if (RETISGOOD(test, comparerresult)){ \
 		tend = clock(); \
-        fprintf(ctestify_stdout, "%s%s%s %s.%s (%.3Lfms)\n", CGREEN, "[      OK ]", CRESET, current_test_suite, testname, (long double)((tend - tstart) / CLOCKS_PER_SEC * 1000)); \
+		long double time = ((long double)(tend - tstart)) / CLOCKS_PER_SEC; \
+		fprintf(ctestify_stdout, "%s%s%s %s.%s (%.3Lf%s)\n", CGREEN, "[      OK ]", CRESET, current_test_suite, testname, time < 1000 ? time * 1000 : time, time < 1000 ? "ms" : "s"); \
         successed++;}else{ \
 		tend = clock(); \
-        fprintf(ctestify_stdout, "%s%s%s %s.%s (%.3Lf)\n", CRED, "[ FAILURE ]", CRESET, current_test_suite, testname, (long double)((tend - tstart) / CLOCKS_PER_SEC * 1000)); \
+		long double time = ((double)(tend - tstart)) / CLOCKS_PER_SEC; \
+        fprintf(ctestify_stdout, "%s%s%s %s.%s (%.3Lf%s)\n", CRED, "[ FAILURE ]", CRESET, current_test_suite, testname, time < 1000 ? time * 1000 : time, time < 1000 ? "ms" : "s"); \
 		failed++; \
         int msg_avail = 0; \
         if (strlen(errmsg) > 1) \
@@ -206,7 +208,7 @@ int RETISGOOD(Test test, ComparerResult result){
 #define PRINT_EXPECTED_FLOAT fprintf(ctestify_stdout, "\tExpected: %f (0x%a)\n\tActual value of %s: %f (0x%a)\n", comparerret.args.floatargs[1], comparerret.args.floatargs[1], firstarg, comparerret.args.floatargs[0], comparerret.args.floatargs[0]);
 #define PRINT_EXPECTED_DOUBLE fprintf(ctestify_stdout, "\tExpected: %lf (0x%a)\n\tActual value of %s: %lf (0x%a)\n", comparerret.args.doubleargs[1], comparerret.args.doubleargs[1], firstarg, comparerret.args.doubleargs[0], comparerret.args.doubleargs[0]);
 #define PRINT_EXPECTED_CHARP fprintf(ctestify_stdout, "\tExpected: '%s' (0x%p)\n\tActual value of %s: '%s' (0x%p)\n", comparerret.args.charpargs[1], comparerret.args.charpargs[1], firstarg, comparerret.args.charpargs[0], comparerret.args.charpargs[0]);
-#define PRINT_EXPECTEDEQ_VOIDP fprintf(ctestify_stdout, "Expected: %p\n\tActual pointer value: %p\n", comparerret.args.voidpargs[1], comparerret.args.voidpargs[0]);
+#define PRINT_EXPECTEDEQ_VOIDP fprintf(ctestify_stdout, "\tExpected: %p\n\tActual pointer value: %p\n", comparerret.args.voidpargs[1], comparerret.args.voidpargs[0]);
 #define PRINT_EXPECTED_VOIDP fprintf(ctestify_stdout, "\tActual pointer value: %p\n", comparerret.args.voidpargs[0]);
 
 #define SAFE_WRAPPER(func, line, errmsg, test_name, test, value, expected, index) \
@@ -218,7 +220,8 @@ int RETISGOOD(Test test, ComparerResult result){
 		func(errmsg, line, COMPARER(value, expected), test, #value, #expected, test_name, index); \
 	} else { \
 		tend = clock(); \
-		fprintf(ctestify_stdout, "%s[ SIGSEGV ]%s %s.%s (%.3Lfms)\n\t%s\n", CRED, CRESET, current_test_suite, test_name, (long double)((tend - tstart) / CLOCKS_PER_SEC * 1000), messages[7]); \
+		long double time = ((long double)(tend - tstart)) / CLOCKS_PER_SEC; \
+		fprintf(ctestify_stdout, "%s[ SIGSEGV ]%s %s.%s (%.3Lf%s)\n\t%s\n", CRED, CRESET, current_test_suite, test_name, time < 1000 ? time * 1000 : time, time < 1000 ? "ms" : "s", messages[7]); \
 		assert_failed++;failed++;ran++;}}
 
 //General EXPECT and ASSERT declarations  
@@ -332,12 +335,12 @@ int main(){
     test_main();
     end = clock();
     // Tests finalization, print results and destroy testing environment
-    long double total_time = ((double)(end - start)) / CLOCKS_PER_SEC * 1000;
+    long double total_time = ((double)(end - start)) / CLOCKS_PER_SEC;
     if (successed == 0) fprintf(ctestify_stdout, CRED);
     else if (failed == 0) fprintf(ctestify_stdout, CGREEN);
     else fprintf(ctestify_stdout, CYELLOW);
     fprintf(ctestify_stdout, "[=========]%s %d tests finished ", CRESET, ran);
-    fprintf(ctestify_stdout, "(%.3Lfms total)\n\n", total_time);
+    fprintf(ctestify_stdout, "(%.3Lf%s total)\n\n", total_time < 1000 ? total_time * 1000 : total_time, total_time < 1000 ? "ms" : "s");
     fprintf(ctestify_stdout, "%s[=========]%s Destroying testing environment...\n\n", CGREEN, CRESET);
     if (TestingEnvironmentDestroy())
         fprintf(ctestify_stdout, CRED "Testing environment destroy failure!\n" CRESET);
