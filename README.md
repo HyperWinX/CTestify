@@ -25,6 +25,7 @@
 - [About project](#about-ctestify)
 - [Installation](#installation)
 - [Usage](#usage)
+    - [Constructor and destructor](#custom-env-constructor-and-destructor)
     - [Supported data types](#supported-data-types)
     - [M type of tests](#m-type-of-tests)
     - [ASSERT tests](#assert-tests)
@@ -43,13 +44,33 @@ CTestify is a small framework for C programs. It has EXPECT and ASSERT tests, se
 ## Installation
 1. Download main header [ctestify.h](ctestify.h)
 2. Include it to your source file.
-3. To set test suite name use
+3. Create entry point like this:
+```c
+void test_main(){
+    // Write tests here
+}
+```
+4. To set test suite name use
 ```c
 SET_TEST_SUITE_NAME(TESTS);
 ```
-4. Now you can write some tests!
+without it tests wont work!
+5. Now you can write some tests!
 
 ## Usage
+
+### Custom env constructor and destructor
+Maybe, you need to do something before or after tests. If so, you need to define TESTINGENVCTL before including framework.
+```c
+#define TESTINGENVCTL
+#include "ctestify.h"
+```
+Now you can write them. You should create two functions.
+```c
+int TestingEnvironmentSetUp(){}
+int TestingEnvironmentDestroy(){}
+```
+Functions return zero if successed, and nonzero if failed.
 
 ### Supported data types
 Currently tests support int (from int8_t to uint64_t), float, double, char* and void*. Char* means string, so it uses strcmp();
