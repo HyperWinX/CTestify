@@ -29,6 +29,11 @@ void test_main(){
     EXPECT_EQ(EQTEST3, 5, 4);
     EXPECT_EQM(EQTEST4, 5, 4, "Custom error message for expect_eq()!");
 
+    EXPECT_NEQ(NEQTEST1, 5, 4);
+    EXPECT_NEQM(NEQTEST2, 5, 4, "Custom error message for expect_eq()!");
+    EXPECT_NEQ(NEQTEST3, 5, 5);
+    EXPECT_NEQM(NEQTEST4, 5, 5, "Custom error message for expect_eq()!");
+
     EXPECT_TRUE(TRUETEST1, 5);
     EXPECT_TRUEM(TRUETEST2, 5, "Custom error message for expect_true()!");
     EXPECT_TRUE(TRUETEST3, 0);

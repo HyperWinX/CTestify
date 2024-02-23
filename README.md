@@ -30,6 +30,7 @@
     - [M type of tests](#m-type-of-tests)
     - [ASSERT tests](#assert-tests)
     - [EXPECT_EQ](#expect_eq)
+    - [EXPECT_NEQ](#expect_neq)
     - [EXPECT_TRUE](#expect_true)
     - [EXPECT_FALSE](#expect_false)
     - [EXPECT_BIGGER](#expect_bigger)
@@ -90,6 +91,14 @@ Signature: EXPECT_EQ(test_name, value, expected)
 ```c
 EXPECT_EQ(EQTEST1, 5, 7); // Will fail
 EXPECT_EQ(EQTEST2, 5, 5); // Good test
+```
+
+### EXPECT_NEQ
+Expects value, not equal to second.
+Signature: EXPECT_NEQ(test_name, value, expected)
+```c
+EXPECT_NEQ(NEQTEST1, 5, 5); // Will fail
+EXPECT_NEQ(NEQTEST2, 5, 7); // Good test
 ```
 
 ### EXPECT_TRUE

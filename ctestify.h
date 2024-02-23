@@ -57,6 +57,7 @@ typedef enum ComparerResult{
 
 typedef enum Test{
     EX_EQ,
+    EX_NEQ,
 	EX_TRUE,
 	EX_FALSE,
 	EX_BIG,
@@ -154,7 +155,9 @@ int RETISGOOD(Test test, ComparerResult result){
 	switch(test){
 		case EX_EQ:
 			return result == EQ;
-		case EX_TRUE: 
+        case EX_NEQ:
+            return result != EQ;
+		case EX_TRUE:
 			return result == BIGGER;
 		case EX_FALSE:
 			return result == EQ;
@@ -229,6 +232,11 @@ int RETISGOOD(Test test, ComparerResult result){
 #define ASSERT_EQ(test_name, value, expected) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, "", #test_name, EQ_EQ, value, expected, 0)
 #define EXPECT_EQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, errmsg, #test_name, EX_EQ, value, expected, 0)
 #define ASSERT_EQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, errmsg, #test_name, EX_EQ, value, expected, 0)
+
+#define EXPECT_NEQ(test_name, value, expected) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, "", #test_name, EX_NEQ, value, expected, 0)
+#define ASSERT_NEQ(test_name, value, expected) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, "", #test_name, EQ_NEQ, value, expected, 0)
+#define EXPECT_NEQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, errmsg, #test_name, EX_NEQ, value, expected, 0)
+#define ASSERT_NEQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, errmsg, #test_name, EX_NEQ, value, expected, 0)
 
 #define EXPECT_TRUE(test_name, value) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, "", #test_name, EX_TRUE, value, 0, 1)
 #define ASSERT_TRUE(test_name, value) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, "", #test_name, EX_TRUE, value, 0, 1)
