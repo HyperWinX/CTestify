@@ -305,7 +305,7 @@ void expect_equals(char* errmsg, int32_t line, ComparerResult comparerresult, Te
 
 void assert_equals(char* errmsg, int32_t line, ComparerResult comparerresult, Test test, char* firstarg, char* secondarg, char* testname, int index){
     DEFAULT_BODY
-    if (!comparerresult) assert_failed++;
+    if (!RETISGOOD(test, comparerresult)) assert_failed++;
     RESET_COMPARERRET
 }
 
