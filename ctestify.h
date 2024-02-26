@@ -158,7 +158,7 @@ int RETISGOOD(Test test, ComparerResult result){
         case EX_NEQ:
             return result != EQ;
 		case EX_TRUE:
-			return result == BIGGER;
+			return result != EQ;
 		case EX_FALSE:
 			return result == EQ;
 		case EX_LESS:
@@ -234,7 +234,7 @@ int RETISGOOD(Test test, ComparerResult result){
 #define ASSERT_EQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, errmsg, #test_name, EX_EQ, value, expected, 0)
 
 #define EXPECT_NEQ(test_name, value, expected) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, "", #test_name, EX_NEQ, value, expected, 0)
-#define ASSERT_NEQ(test_name, value, expected) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, "", #test_name, EQ_NEQ, value, expected, 0)
+#define ASSERT_NEQ(test_name, value, expected) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, "", #test_name, EX_NEQ, value, expected, 0)
 #define EXPECT_NEQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, errmsg, #test_name, EX_NEQ, value, expected, 0)
 #define ASSERT_NEQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, errmsg, #test_name, EX_NEQ, value, expected, 0)
 
