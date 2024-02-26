@@ -189,7 +189,6 @@ int RETISGOOD(Test test, ComparerResult result){
         fprintf(ctestify_stdout, "%s%s%s %s.%s (%.3Lf%s)\n", CRED, "[ FAILURE ]", CRESET, current_test_suite, testname, time < 1000 ? time * 1000 : time, time < 1000 ? "ms" : "s"); \
 		failed++; \
 		if (isassert) assert_failed++; \
-        int msg_avail = 0; \
         if (strlen(errmsg) > 1) \
 		    fprintf(ctestify_stdout, "\t%s\n", errmsg); \
 		else \
@@ -219,7 +218,7 @@ int RETISGOOD(Test test, ComparerResult result){
 	if (firstphase){total_functions++;} else if (!assert_failed) { \
     fprintf(ctestify_stdout, "%s%s%s %s.%s\n", CGREEN, "[ RUN     ]", CRESET, current_test_suite, test_name); \
     tstart = clock(); \
-	void* result = NULL; signal(SIGSEGV, sigsegv_handler); \
+	signal(SIGSEGV, sigsegv_handler); \
 	if (!setjmp(sigsegv_buf)){ \
 		func(errmsg, line, COMPARER(value, expected), test, #value, #expected, test_name, index); \
 	} else { \
