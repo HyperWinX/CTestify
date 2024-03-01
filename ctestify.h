@@ -171,6 +171,8 @@ int RETISGOOD(Test test, ComparerResult result){
 			return result == LESS || result == EQ;
 		case EX_VALPTR:
 			return result == BIGGER;
+        default:
+            return 0;
 	}
 }
 
