@@ -16,18 +16,18 @@
 #define CRESET   "\x1b[0m"
 
 //All global fields required by engine
-int total_functions = 0;
-int firstphase = 1;
-int successed = 0;
-int failed = 0;
-int ran = 0;
-int assert_failed = 0;
+int ctestify_total_functions = 0;
+int ctestify_firstphase = 1;
+int ctestify_successed = 0;
+int ctestify_failed = 0;
+int ctestify_ran = 0;
+int assert_ctestify_failed = 0;
 char* current_test_suite = "";
-jmp_buf sigsegv_buf = {0};
+jmp_buf ctestify_sigsegv_buf = {0};
 FILE* ctestify_stdout;
 struct ComparerRet comparerret;
-time_t tstart, tend = {0};
-char* messages[] = {
+time_t ctestify_tstart, ctestify_tend = {0};
+char* ctestify_messages[] = {
 	"Expected values equality!",
 	"Expected true value!",
 	"Expected false value!",
@@ -36,7 +36,8 @@ char* messages[] = {
 	"Expected bigger or equal value!",
 	"Expected less or equal value!",
 	"Expected function success, but it caused a segfault!",
-	"Expected valid pointer!"
+	"Expected valid pointer!",
+    "Expected not equal values!"
 };
 
 //Unions, enums and structs 
@@ -114,7 +115,6 @@ ComparerResult unsigned_int_comparer(uint64_t arg1, uint64_t arg2){
 	else if (arg1 > arg2) return BIGGER;
 	else return LESS;
 }
-
 ComparerResult str_comparer(char* arg1, char* arg2){
     comparerret.args.charpargs[0] = arg1;
     comparerret.args.charpargs[1] = arg2;
@@ -179,23 +179,23 @@ int RETISGOOD(Test test, ComparerResult result){
 
 #define DEFAULT_BODY CHECK_ASSERT_FAILURE \
     if (strlen(testname) <= 1 || strlen(current_test_suite) <= 1){ \
-        fprintf(ctestify_stdout, "Test name or test suite name can't be null!\n");assert_failed++;return;} \
-    ran++; \
+        fprintf(ctestify_stdout, "Test name or test suite name can't be null!\n");assert_ctestify_failed++;return;} \
+    ctestify_ran++; \
     if (RETISGOOD(test, comparerresult)){ \
-		tend = clock(); \
-		long double time = ((long double)(tend - tstart)) / CLOCKS_PER_SEC; \
+		ctestify_tend = clock(); \
+		long double time = ((long double)(ctestify_tend - ctestify_tstart)) / CLOCKS_PER_SEC; \
 		fprintf(ctestify_stdout, "%s%s%s %s.%s (%.3Lf%s)\n", CGREEN, "[      OK ]", CRESET, current_test_suite, testname, time < 1000 ? time * 1000 : time, time < 1000 ? "ms" : "s"); \
-        successed++;}else{ \
-		tend = clock(); \
-		long double time = ((double)(tend - tstart)) / CLOCKS_PER_SEC; \
+        ctestify_successed++;}else{ \
+		ctestify_tend = clock(); \
+		long double time = ((double)(ctestify_tend - ctestify_tstart)) / CLOCKS_PER_SEC; \
         fprintf(ctestify_stdout, "%s%s%s %s.%s (%.3Lf%s)\n", CRED, "[ FAILURE ]", CRESET, current_test_suite, testname, time < 1000 ? time * 1000 : time, time < 1000 ? "ms" : "s"); \
-		failed++; \
-		if (isassert) assert_failed++; \
+		ctestify_failed++; \
+		if (isassert) assert_ctestify_failed++; \
         if (strlen(errmsg) > 1) \
 		    fprintf(ctestify_stdout, "\t%s\n", errmsg); \
 		else \
-		    fprintf(ctestify_stdout, "\t%s\n", messages[index]); \
-		if (EXTENDEDMSG_NREQUIRED(test)) return; \
+		    fprintf(ctestify_stdout, "\t%s\n", ctestify_messages[index]); \
+		if (EXctestify_tendEDMSG_NREQUIRED(test)) return; \
         switch(comparerret.mode){ \
             case SignedInt:{PRINT_EXPECTED_SIGNED break;} \
             case UnsignedInt:{PRINT_EXPECTED_UNSIGNED break;} \
@@ -205,8 +205,8 @@ int RETISGOOD(Test test, ComparerResult result){
 			case VoidPointer:{if(test == EX_EQ){PRINT_EXPECTEDEQ_VOIDP}else if(test == EX_VALPTR){PRINT_EXPECTED_VOIDP}}}}
 
 //Small macroses for more easy functions structure, automatizing routines
-#define EXTENDEDMSG_NREQUIRED(test) (test == EX_TRUE || test == EX_FALSE)
-#define CHECK_ASSERT_FAILURE if (assert_failed) return;
+#define EXctestify_tendEDMSG_NREQUIRED(test) (test == EX_TRUE || test == EX_FALSE)
+#define CHECK_ASSERT_FAILURE if (assert_ctestify_failed) return;
 #define RESET_COMPARERRET memset(&comparerret, 0x00, sizeof(comparerret));
 #define PRINT_EXPECTED_SIGNED fprintf(ctestify_stdout, "\tExpected: %ld (0x%lx)\n\tActual value of %s: %ld (0x%lx)\n", comparerret.args.intargs[1], comparerret.args.intargs[1], firstarg, comparerret.args.intargs[0], comparerret.args.intargs[0]);
 #define PRINT_EXPECTED_UNSIGNED fprintf(ctestify_stdout, "\tExpected: %lu (0x%lx)\n\tActual value of %s: %lu (0x%lx)\n", comparerret.args.uintargs[1], comparerret.args.uintargs[1], firstarg, comparerret.args.uintargs[0], comparerret.args.uintargs[0]);
@@ -217,63 +217,63 @@ int RETISGOOD(Test test, ComparerResult result){
 #define PRINT_EXPECTED_VOIDP fprintf(ctestify_stdout, "\tActual pointer value: %p\n", comparerret.args.voidpargs[0]);
 
 #define SAFE_WRAPPER(func, line, errmsg, test_name, test, value, expected, index) \
-	if (firstphase){total_functions++;} else if (!assert_failed) { \
+	if (ctestify_firstphase){ctestify_total_functions++;} else if (!assert_ctestify_failed) { \
     fprintf(ctestify_stdout, "%s%s%s %s.%s\n", CGREEN, "[ RUN     ]", CRESET, current_test_suite, test_name); \
-    tstart = clock(); \
+    ctestify_tstart = clock(); \
 	signal(SIGSEGV, sigsegv_handler); \
-	if (!setjmp(sigsegv_buf)){ \
+	if (!setjmp(ctestify_sigsegv_buf)){ \
 		func(errmsg, line, COMPARER(value, expected), test, #value, #expected, test_name, index); \
 	} else { \
-		tend = clock(); \
-		long double time = ((long double)(tend - tstart)) / CLOCKS_PER_SEC; \
-		fprintf(ctestify_stdout, "%s[ SIGSEGV ]%s %s.%s (%.3Lf%s)\n\t%s\n", CRED, CRESET, current_test_suite, test_name, time < 1000 ? time * 1000 : time, time < 1000 ? "ms" : "s", messages[7]); \
-		assert_failed++;failed++;ran++;}}
+		ctestify_tend = clock(); \
+		long double time = ((long double)(ctestify_tend - ctestify_tstart)) / CLOCKS_PER_SEC; \
+		fprintf(ctestify_stdout, "%s[ SIGSEGV ]%s %s.%s (%.3Lf%s)\n\t%s\n", CRED, CRESET, current_test_suite, test_name, time < 1000 ? time * 1000 : time, time < 1000 ? "ms" : "s", ctestify_messages[7]); \
+		assert_ctestify_failed++;ctestify_failed++;ctestify_ran++;}}
 
 //General EXPECT and ASSERT declarations  
-#define EXPECT_EQ(test_name, value, expected) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, "", #test_name, EX_EQ, value, expected, 0)
-#define ASSERT_EQ(test_name, value, expected) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, "", #test_name, EX_EQ, value, expected, 0)
-#define EXPECT_EQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, errmsg, #test_name, EX_EQ, value, expected, 0)
-#define ASSERT_EQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, errmsg, #test_name, EX_EQ, value, expected, 0)
+#define EXPECT_EQ(test_name, value, expected) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, "", #test_name, EX_EQ, value, expected, 0)
+#define ASSERT_EQ(test_name, value, expected) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, "", #test_name, EX_EQ, value, expected, 0)
+#define EXPECT_EQM(test_name, value, expected, errmsg) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, errmsg, #test_name, EX_EQ, value, expected, 0)
+#define ASSERT_EQM(test_name, value, expected, errmsg) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, errmsg, #test_name, EX_EQ, value, expected, 0)
 
-#define EXPECT_NEQ(test_name, value, expected) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, "", #test_name, EX_NEQ, value, expected, 0)
-#define ASSERT_NEQ(test_name, value, expected) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, "", #test_name, EX_NEQ, value, expected, 0)
-#define EXPECT_NEQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, errmsg, #test_name, EX_NEQ, value, expected, 0)
-#define ASSERT_NEQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, errmsg, #test_name, EX_NEQ, value, expected, 0)
+#define EXPECT_NEQ(test_name, value, expected) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, "", #test_name, EX_NEQ, value, expected, 0)
+#define ASSERT_NEQ(test_name, value, expected) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, "", #test_name, EX_NEQ, value, expected, 0)
+#define EXPECT_NEQM(test_name, value, expected, errmsg) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, errmsg, #test_name, EX_NEQ, value, expected, 0)
+#define ASSERT_NEQM(test_name, value, expected, errmsg) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, errmsg, #test_name, EX_NEQ, value, expected, 0)
 
-#define EXPECT_TRUE(test_name, value) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, "", #test_name, EX_TRUE, value, 0, 1)
-#define ASSERT_TRUE(test_name, value) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, "", #test_name, EX_TRUE, value, 0, 1)
-#define EXPECT_TRUEM(test_name, value, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, errmsg, #test_name, EX_TRUE, value, 0, 1)
-#define ASSERT_TRUEM(test_name, value, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, errmsg, #test_name, EX_TRUE, value, 0, 1)
+#define EXPECT_TRUE(test_name, value) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, "", #test_name, EX_TRUE, value, 0, 1)
+#define ASSERT_TRUE(test_name, value) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, "", #test_name, EX_TRUE, value, 0, 1)
+#define EXPECT_TRUEM(test_name, value, errmsg) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, errmsg, #test_name, EX_TRUE, value, 0, 1)
+#define ASSERT_TRUEM(test_name, value, errmsg) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, errmsg, #test_name, EX_TRUE, value, 0, 1)
 
-#define EXPECT_FALSE(test_name, value) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, "", #test_name, EX_FALSE, value, 0, 2)
-#define ASSERT_FALSE(test_name, value) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, "", #test_name, EX_FALSE, value, 0, 2)
-#define EXPECT_FALSEM(test_name, value, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, errmsg, #test_name, EX_FALSE, value, 0, 2)
-#define ASSERT_FALSEM(test_name, value, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, errmsg, #test_name, EX_FALSE, value, 0, 2)
+#define EXPECT_FALSE(test_name, value) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, "", #test_name, EX_FALSE, value, 0, 2)
+#define ASSERT_FALSE(test_name, value) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, "", #test_name, EX_FALSE, value, 0, 2)
+#define EXPECT_FALSEM(test_name, value, errmsg) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, errmsg, #test_name, EX_FALSE, value, 0, 2)
+#define ASSERT_FALSEM(test_name, value, errmsg) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, errmsg, #test_name, EX_FALSE, value, 0, 2)
 
-#define EXPECT_BIGGER(test_name, value, expected) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, "", #test_name, EX_BIG, value, expected, 3)
-#define ASSERT_BIGGER(test_name, value, expected) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, "", #test_name, EX_BIG, value, expected, 3)
-#define EXPECT_BIGGERM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, errmsg, #test_name, EX_BIG, value, expected, 3)
-#define ASSERT_BIGGERM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, errmsg, #test_name, EX_BIG, value, expected, 3)
+#define EXPECT_BIGGER(test_name, value, expected) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, "", #test_name, EX_BIG, value, expected, 3)
+#define ASSERT_BIGGER(test_name, value, expected) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, "", #test_name, EX_BIG, value, expected, 3)
+#define EXPECT_BIGGERM(test_name, value, expected, errmsg) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, errmsg, #test_name, EX_BIG, value, expected, 3)
+#define ASSERT_BIGGERM(test_name, value, expected, errmsg) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, errmsg, #test_name, EX_BIG, value, expected, 3)
 
-#define EXPECT_LESS(test_name, value, expected) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, "", #test_name, EX_LESS, value, expected, 4)
-#define ASSERT_LESS(test_name, value, expected) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, "", #test_name, EX_LESS, value, expected, 4)
-#define EXPECT_LESSM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, errmsg, #test_name, EX_LESS, value, expected, 4)
-#define ASSERT_LESSM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, errmsg, #test_name, EX_LESS, value, expected, 4)
+#define EXPECT_LESS(test_name, value, expected) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, "", #test_name, EX_LESS, value, expected, 4)
+#define ASSERT_LESS(test_name, value, expected) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, "", #test_name, EX_LESS, value, expected, 4)
+#define EXPECT_LESSM(test_name, value, expected, errmsg) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, errmsg, #test_name, EX_LESS, value, expected, 4)
+#define ASSERT_LESSM(test_name, value, expected, errmsg) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, errmsg, #test_name, EX_LESS, value, expected, 4)
 
-#define EXPECT_BIGGEROREQ(test_name, value, expected) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, "", #test_name, EX_BIGEQ, value, expected, 5)
-#define ASSERT_BIGGEROREQ(test_name, value, expected) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, "", #test_name, EX_BIGEQ, value, expected, 5)
-#define EXPECT_BIGGEROREQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, errmsg, #test_name, EX_BIGEQ, value, expected, 5)
-#define ASSERT_BIGGEROREQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, errmsg, #test_name, EX_BIGEQ, value, expected, 5)
+#define EXPECT_BIGGEROREQ(test_name, value, expected) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, "", #test_name, EX_BIGEQ, value, expected, 5)
+#define ASSERT_BIGGEROREQ(test_name, value, expected) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, "", #test_name, EX_BIGEQ, value, expected, 5)
+#define EXPECT_BIGGEROREQM(test_name, value, expected, errmsg) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, errmsg, #test_name, EX_BIGEQ, value, expected, 5)
+#define ASSERT_BIGGEROREQM(test_name, value, expected, errmsg) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, errmsg, #test_name, EX_BIGEQ, value, expected, 5)
 
-#define EXPECT_LESSOREQ(test_name, value, expected) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, "", #test_name, EX_LESSEQ, value, expected, 6)
-#define ASSERT_LESSOREQ(test_name, value, expected) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, "", #test_name, EX_LESSEQ, value, expected, 6)
-#define EXPECT_LESSOREQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, errmsg, #test_name, EX_LESSEQ, value, expected, 6)
-#define ASSERT_LESSOREQM(test_name, value, expected, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, errmsg, #test_name, EX_LESSEQ, value, expected, 6)
+#define EXPECT_LESSOREQ(test_name, value, expected) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, "", #test_name, EX_LESSEQ, value, expected, 6)
+#define ASSERT_LESSOREQ(test_name, value, expected) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, "", #test_name, EX_LESSEQ, value, expected, 6)
+#define EXPECT_LESSOREQM(test_name, value, expected, errmsg) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, errmsg, #test_name, EX_LESSEQ, value, expected, 6)
+#define ASSERT_LESSOREQM(test_name, value, expected, errmsg) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, errmsg, #test_name, EX_LESSEQ, value, expected, 6)
 
-#define EXPECT_VALIDPTR(test_name, ptr) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, "", #test_name, EX_VALPTR, ptr, 0, 8)
-#define ASSERT_VALIDPTR(test_name, ptr) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, "", #test_name, EX_VALPTR, ptr, 0, 8)
-#define EXPECT_VALIDPTRM(test_name, ptr, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, errmsg, #test_name, EX_VALPTR, ptr, 0, 8)
-#define ASSERT_VALIDPTRM(test_name, ptr, errmsg) if (firstphase) total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, errmsg, #test_name, EX_VALPTR, ptr, 0, 8)
+#define EXPECT_VALIDPTR(test_name, ptr) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, "", #test_name, EX_VALPTR, ptr, 0, 8)
+#define ASSERT_VALIDPTR(test_name, ptr) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, "", #test_name, EX_VALPTR, ptr, 0, 8)
+#define EXPECT_VALIDPTRM(test_name, ptr, errmsg) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, errmsg, #test_name, EX_VALPTR, ptr, 0, 8)
+#define ASSERT_VALIDPTRM(test_name, ptr, errmsg) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, errmsg, #test_name, EX_VALPTR, ptr, 0, 8)
 
 //Additional functions
 #define PRINT_START(func) print_start(#func);
@@ -283,7 +283,7 @@ int RETISGOOD(Test test, ComparerResult result){
 void sigsegv_handler(int s){
     switch (s){
         case SIGSEGV:
-            longjmp(sigsegv_buf, 1);
+            longjmp(ctestify_sigsegv_buf, 1);
             break;
     }
 }
@@ -309,7 +309,7 @@ void expect_equals(char* errmsg, int32_t line, ComparerResult comparerresult, Te
 void assert_equals(char* errmsg, int32_t line, ComparerResult comparerresult, Test test, char* firstarg, char* secondarg, char* testname, int index){
 	int isassert = 1;
     DEFAULT_BODY
-    if (!RETISGOOD(test, comparerresult)) assert_failed++;
+    if (!RETISGOOD(test, comparerresult)) assert_ctestify_failed++;
     RESET_COMPARERRET
 }
 
@@ -317,11 +317,11 @@ void assert_equals(char* errmsg, int32_t line, ComparerResult comparerresult, Te
 int main(){
     // Setting up local stdout
     ctestify_stdout = fopen("/dev/tty", "a");
-    if (!ctestify_stdout){ printf(CRED "Failed to acquire local stdout copy!\n" CRESET); return 0;}
+    if (!ctestify_stdout){ printf(CRED "ctestify_failed to acquire local stdout copy!\n" CRESET); return 0;}
     // Testing environment setup
     fprintf(ctestify_stdout, "%s[=========]%s Setting up testing environment...\n\n", CGREEN, CRESET);
     signal(SIGSEGV, sigsegv_handler);
-    total_functions = 0;
+    ctestify_total_functions = 0;
     time_t start, end;
     // Disable stdout 
     int stdout_backup = dup(fileno(stdout));
@@ -332,31 +332,31 @@ int main(){
     dup2(stdout_backup, fileno(stdout));
 	close(dev_null_fd);
 	close(stdout_backup);
-    if (total_functions == 0){
+    if (ctestify_total_functions == 0){
         fprintf(ctestify_stdout, CRED "No tests detected!\n" CRESET);
         return 0;
     }
-    firstphase = 0;
+    ctestify_firstphase = 0;
     if (TestingEnvironmentSetUp()){
         fprintf(ctestify_stdout, CRED "Environment setup failure!\n" CRESET);
         return 1;
     }
     // Running tests
-    fprintf(ctestify_stdout, "%s[=========]%s Running %d tests\n", CGREEN, CRESET, total_functions);
+    fprintf(ctestify_stdout, "%s[=========]%s Running %d tests\n", CGREEN, CRESET, ctestify_total_functions);
     start = clock();
     test_main();
     end = clock();
     // Tests finalization, print results and destroy testing environment
     long double total_time = ((double)(end - start)) / CLOCKS_PER_SEC;
-    if (successed == 0) fprintf(ctestify_stdout, CRED);
-    else if (failed == 0) fprintf(ctestify_stdout, CGREEN);
+    if (ctestify_successed == 0) fprintf(ctestify_stdout, CRED);
+    else if (ctestify_failed == 0) fprintf(ctestify_stdout, CGREEN);
     else fprintf(ctestify_stdout, CYELLOW);
-    fprintf(ctestify_stdout, "[=========]%s %d out of %d tests finished ", CRESET, ran, total_functions);
+    fprintf(ctestify_stdout, "[=========]%s %d out of %d tests finished ", CRESET, ctestify_ran, ctestify_total_functions);
     fprintf(ctestify_stdout, "(%.3Lf%s total)\n", total_time < 1000 ? total_time * 1000 : total_time, total_time < 1000 ? "ms" : "s");
     fprintf(ctestify_stdout, "%s[=========]%s Destroying testing environment...\n\n", CGREEN, CRESET);
     if (TestingEnvironmentDestroy())
         fprintf(ctestify_stdout, CRED "\nTesting environment destroy failure!\n" CRESET);
 	else fputc('\n', ctestify_stdout);
-    if (successed) fprintf(ctestify_stdout, "%s[ SUCCESS ]%s %d tests.\n", CGREEN, CRESET, successed);
-    if (failed) fprintf(ctestify_stdout, "%s[ FAILURE ]%s %d tests.\n", CRED, CRESET, failed);
+    if (ctestify_successed) fprintf(ctestify_stdout, "%s[ SUCCESS ]%s %d tests.\n", CGREEN, CRESET, ctestify_successed);
+    if (ctestify_failed) fprintf(ctestify_stdout, "%s[ FAILURE ]%s %d tests.\n", CRED, CRESET, ctestify_failed);
 }

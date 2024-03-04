@@ -53,7 +53,6 @@ void test_main(){
     EXPECT_LESSM(LESSTEST2, 1, 5, "Custom error message for expect_less()!");
     EXPECT_LESS(LESSTEST3, 10, 5);
     EXPECT_LESSM(LESSTEST4, 10, 5, "Custom error message for expect_less()!");
-
     EXPECT_BIGGEROREQ(BIGGEROREQTEST1, 5, 1);
     EXPECT_BIGGEROREQM(BIGGEROREQTEST2, 5, 1, "Custom error message for expect_biggeroreq()!");
     EXPECT_BIGGEROREQ(BIGGEROREQTEST3, 5, 10);
