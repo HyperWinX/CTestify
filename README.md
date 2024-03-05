@@ -38,6 +38,7 @@
     - [EXPECT_BIGGEROREQ](#expect_biggeroreq)
     - [EXPECT_LESSOREQ](#expect_lessoreq)
     - [EXPECT_VALIDPTR](#expect_validptr)
+    - [PRINT](#print)
 
 ## About CTestify
 CTestify is a small framework for C programs. It has EXPECT and ASSERT tests, segmentation fault protection (it will no crash if your test segfaults). Test creation is really easy.
@@ -155,6 +156,12 @@ Signature: EXPECT_VALIDPTR(test_name, ptr);
 ```c
 EXPECT_VALIDPTR(VALIDPTR1, (void*)0); // Will fail
 EXPECT_VALIDPTR(VALIDPTR2, (void*)0xFF0154297AC8); // Good test
+```
+
+### PRINT
+Prints user messages during test run. Formatting supported! Also flushes buffer, so can be used in loops.
+```c
+PRINT("INTERNAL MESSAGE %s %d", "TEST", 2);
 ```
 
 ## List of ASSERT variants

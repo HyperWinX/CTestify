@@ -281,7 +281,11 @@ int RETISGOOD(Test test, ComparerResult result){
 #define PRINT_START(func) print_start(#func);
 #define SET_TEST_SUITE_NAME(name) current_test_suite = #name
 
-#define PRINT(...) _print_internal(__VA_ARGS__)
+#define PRINT(...) \
+		fprintf(ctestify_stdout, "%s%s", CGREEN, PROMPT); \
+		fprintf(ctestify_stdout, __VA_ARGS__); \
+		fprintf(ctestify_stdout, "%s\n", CRESET); \
+		fflush(ctestify_stdout);
 
 //Handler of segmentation fault, required for tests engine stability 
 void sigsegv_handler(int s){
@@ -301,13 +305,6 @@ int TestingEnvironmentDestroy();
 int TestingEnvironmentSetUp(){return 0;}
 int TestingEnvironmentDestroy(){return 0;}
 #endif
-
-void _print_internal(...){
-	fprintf(ctestify_stdout, "%s%s", CGREEN, PROMPT);
-	fprintf(ctestify_stdout, __VA_ARGS__);
-	fprintf(ctestify_stdout, "%s\n", CRESET);
-	fflush(ctestify_stdout);
-}
 
 //All testing functions
 
