@@ -8,12 +8,14 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
+#include <stdarg.h>
 
 //Colors ANSI escape sequences
 #define CRED     "\x1b[31m"
 #define CGREEN   "\x1b[32m"
 #define CYELLOW  "\x1b[33m"
 #define CRESET   "\x1b[0m"
+#define PROMPT   "==> "
 
 //All global fields required by engine
 int ctestify_total_functions = 0;
@@ -235,10 +237,10 @@ int RETISGOOD(Test test, ComparerResult result){
 #define EXPECT_EQM(test_name, value, expected, errmsg) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, errmsg, #test_name, EX_EQ, value, expected, 0)
 #define ASSERT_EQM(test_name, value, expected, errmsg) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, errmsg, #test_name, EX_EQ, value, expected, 0)
 
-#define EXPECT_NEQ(test_name, value, expected) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, "", #test_name, EX_NEQ, value, expected, 0)
-#define ASSERT_NEQ(test_name, value, expected) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, "", #test_name, EX_NEQ, value, expected, 0)
-#define EXPECT_NEQM(test_name, value, expected, errmsg) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, errmsg, #test_name, EX_NEQ, value, expected, 0)
-#define ASSERT_NEQM(test_name, value, expected, errmsg) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, errmsg, #test_name, EX_NEQ, value, expected, 0)
+#define EXPECT_NEQ(test_name, value, expected) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, "", #test_name, EX_NEQ, value, expected, 9)
+#define ASSERT_NEQ(test_name, value, expected) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, "", #test_name, EX_NEQ, value, expected, 9)
+#define EXPECT_NEQM(test_name, value, expected, errmsg) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, errmsg, #test_name, EX_NEQ, value, expected, 9)
+#define ASSERT_NEQM(test_name, value, expected, errmsg) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, errmsg, #test_name, EX_NEQ, value, expected, 9)
 
 #define EXPECT_TRUE(test_name, value) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(expect_equals, __LINE__, "", #test_name, EX_TRUE, value, 0, 1)
 #define ASSERT_TRUE(test_name, value) if (ctestify_firstphase) ctestify_total_functions++; else SAFE_WRAPPER(assert_equals, __LINE__, "", #test_name, EX_TRUE, value, 0, 1)
@@ -277,7 +279,9 @@ int RETISGOOD(Test test, ComparerResult result){
 
 //Additional functions
 #define PRINT_START(func) print_start(#func);
-#define SET_TEST_SUITE_NAME(name) current_test_suite = #name;
+#define SET_TEST_SUITE_NAME(name) current_test_suite = #name
+
+#define PRINT(...) _print_internal(__VA_ARGS__)
 
 //Handler of segmentation fault, required for tests engine stability 
 void sigsegv_handler(int s){
@@ -297,6 +301,13 @@ int TestingEnvironmentDestroy();
 int TestingEnvironmentSetUp(){return 0;}
 int TestingEnvironmentDestroy(){return 0;}
 #endif
+
+void _print_internal(...){
+	fprintf(ctestify_stdout, "%s%s", CGREEN, PROMPT);
+	fprintf(ctestify_stdout, __VA_ARGS__);
+	fprintf(ctestify_stdout, "%s\n", CRESET);
+	fflush(ctestify_stdout);
+}
 
 //All testing functions
 

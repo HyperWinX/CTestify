@@ -1,5 +1,6 @@
 #define TESTINGENVCTL
 #include "ctestify.h"
+#include <stdarg.h>
 
 int TestingEnvironmentSetUp(){
     puts("Setting up\n");
@@ -18,7 +19,9 @@ int func(){
 }
 
 int fucking_function_test(){
-    return 5;
+    PRINT("INTERNAL PRINT 1");
+	PRINT("INTERNAL PRINT %d", 2);
+	return 5;
 }
 
 void test_main(){
@@ -72,6 +75,7 @@ void test_main(){
 	EXPECT_VALIDPTRM(VOIDPTEST6, (void*)5, "Custom error message for expect_validptr()!");
 	EXPECT_VALIDPTR(VOIDPTEST7, (void*)0);
 	EXPECT_VALIDPTRM(VOIDPTEST8, (void*)0, "Custom error message for expect_validptr()!");
+	EXPECT_EQ(INTERNALPRINTTEST, fucking_function_test(), 5);
     EXPECT_EQ(SAFEFUNCTEST1, func(), 5);
 	EXPECT_EQ(TEST, 9, 0);
 }
