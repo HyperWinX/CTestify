@@ -26,7 +26,6 @@ int fucking_function_test(){
 
 void test_main(){
     SET_TEST_SUITE_NAME(TESTS);
-
     EXPECT_EQ(EQTEST1, 5, 5);
     EXPECT_EQM(EQTEST2, 5, 5, "Custom error message for expect_eq()!");
     EXPECT_EQ(EQTEST3, 5, 4);

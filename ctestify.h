@@ -8,7 +8,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
-#include <stdarg.h>
+#include <stdlib.h>
 
 //Colors ANSI escape sequences
 #define CRED     "\x1b[31m"
@@ -40,6 +40,25 @@ char* ctestify_messages[] = {
 	"Expected function success, but it caused a segfault!",
 	"Expected valid pointer!",
     "Expected not equal values!"
+};
+
+char* signals[] = {
+	"",
+	"SIGHUP",
+	"SIGINT",
+	"SIGQUIT",
+	"SIGILL",
+	"",
+	"SIGABRT",
+	"SIGBUS",
+	"SIGFPE",
+	"SIGKILL",
+	"SIGUSR1",
+	"SIGSEGV",
+	"SIGUSR2",
+	"SIGPIPE",
+	"SIGALRM",
+	"SIGTERM"
 };
 
 //Unions, enums and structs 
@@ -197,7 +216,7 @@ int RETISGOOD(Test test, ComparerResult result){
 		    fprintf(ctestify_stdout, "\t%s\n", errmsg); \
 		else \
 		    fprintf(ctestify_stdout, "\t%s\n", ctestify_messages[index]); \
-		if (EXctestify_tendEDMSG_NREQUIRED(test)) return; \
+		if (EXTENDEDMSG_NREQUIRED(test)) return; \
         switch(comparerret.mode){ \
             case SignedInt:{PRINT_EXPECTED_SIGNED break;} \
             case UnsignedInt:{PRINT_EXPECTED_UNSIGNED break;} \
@@ -207,7 +226,7 @@ int RETISGOOD(Test test, ComparerResult result){
 			case VoidPointer:{if(test == EX_EQ){PRINT_EXPECTEDEQ_VOIDP}else if(test == EX_VALPTR){PRINT_EXPECTED_VOIDP}}}}
 
 //Small macroses for more easy functions structure, automatizing routines
-#define EXctestify_tendEDMSG_NREQUIRED(test) (test == EX_TRUE || test == EX_FALSE)
+#define EXTENDEDMSG_NREQUIRED(test) (test == EX_TRUE || test == EX_FALSE)
 #define CHECK_ASSERT_FAILURE if (assert_ctestify_failed) return;
 #define RESET_COMPARERRET memset(&comparerret, 0x00, sizeof(comparerret));
 #define PRINT_EXPECTED_SIGNED fprintf(ctestify_stdout, "\tExpected: %ld (0x%lx)\n\tActual value of %s: %ld (0x%lx)\n", comparerret.args.intargs[1], comparerret.args.intargs[1], firstarg, comparerret.args.intargs[0], comparerret.args.intargs[0]);
@@ -222,7 +241,6 @@ int RETISGOOD(Test test, ComparerResult result){
 	if (ctestify_firstphase){ctestify_total_functions++;} else if (!assert_ctestify_failed) { \
     fprintf(ctestify_stdout, "%s%s%s %s.%s\n", CGREEN, "[ RUN     ]", CRESET, current_test_suite, test_name); \
     ctestify_tstart = clock(); \
-	signal(SIGSEGV, sigsegv_handler); \
 	if (!setjmp(ctestify_sigsegv_buf)){ \
 		func(errmsg, line, COMPARER(value, expected), test, #value, #expected, test_name, index); \
 	} else { \
@@ -289,11 +307,13 @@ int RETISGOOD(Test test, ComparerResult result){
 
 //Handler of segmentation fault, required for tests engine stability 
 void sigsegv_handler(int s){
-    switch (s){
-        case SIGSEGV:
-            longjmp(ctestify_sigsegv_buf, 1);
-            break;
-    }
+	if (!ctestify_firstphase) longjmp(ctestify_sigsegv_buf, 1);
+    if (s <= 15)
+		fprintf(ctestify_stdout, "%sGot signal: %s%s\n", CRED, signals[s], CRESET);
+	else
+		fprintf(ctestify_stdout, "%sGot unknown signal!%s\n", CRED, CRESET);
+	fprintf(ctestify_stdout, "%sCTestify: exiting now.%s\n", CRED, CRESET);
+	exit(1);
 }
 
 void test_main();
