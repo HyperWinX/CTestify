@@ -2,7 +2,7 @@
     <h1>CTestify</h1>
     <p>Advanced testing framework.</p>
     <p>
-        <a href="https://github.com/HyperWinX/CTeatify/graphs/contributors">
+        <a href="https://github.com/HyperWinX/CTestify/graphs/contributors">
             <img src="https://img.shields.io/github/contributors/HyperWinX/CTestify" alt="contributors"/>
         </a>
         <a href="https://github.com/HyperWinX/CTestify/commits/master">
