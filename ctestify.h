@@ -28,7 +28,7 @@ char* current_test_suite = "";
 jmp_buf ctestify_sigsegv_buf = {0};
 FILE* ctestify_stdout;
 struct ComparerRet comparerret;
-time_t ctestify_tstart, ctestify_tend = {0};
+struct timeval ctestify_tstart, ctestify_tend, ctestify_tresult = {0};
 char* ctestify_messages[] = {
 	"Expected values equality!",
 	"Expected true value!",
@@ -203,13 +203,15 @@ int RETISGOOD(Test test, ComparerResult result){
         fprintf(ctestify_stdout, "Test name or test suite name can't be null!\n");assert_ctestify_failed++;return;} \
     ctestify_ran++; \
     if (RETISGOOD(test, comparerresult)){ \
-		ctestify_tend = clock(); \
-		long double time = ((long double)(ctestify_tend - ctestify_tstart)) / CLOCKS_PER_SEC; \
-		fprintf(ctestify_stdout, "%s%s%s %s.%s (%.3Lf%s)\n", CGREEN, "[      OK ]", CRESET, current_test_suite, testname, time < 1000 ? time * 1000 : time, time < 1000 ? "ms" : "s"); \
+		gettimeofday(&ctestify_tend, NULL); \
+		timersub(&ctestify_tend, &ctestify_tstart, &ctestify_tresult); \
+		if (ctestify_tresult.tv_sec) fprintf(ctestify_stdout, "%s%s%s %s.%s (%ld.%03lds)\n", CGREEN, "[      OK ]", CRESET, current_test_suite, testname, ctestify_tresult.tv_sec, ctestify_tresult.tv_usec / 1000); \
+		else fprintf(ctestify_stdout, "%s%s%s %s.%s (%ldms)\n", CGREEN, "[      OK ]", CRESET, current_test_suite, testname, ctestify_tresult.tv_usec / 1000); \
         ctestify_successed++;}else{ \
-		ctestify_tend = clock(); \
-		long double time = ((double)(ctestify_tend - ctestify_tstart)) / CLOCKS_PER_SEC; \
-        fprintf(ctestify_stdout, "%s%s%s %s.%s (%.3Lf%s)\n", CRED, "[ FAILURE ]", CRESET, current_test_suite, testname, time < 1000 ? time * 1000 : time, time < 1000 ? "ms" : "s"); \
+		gettimeofday(&ctestify_tend, NULL); \
+		timersub(&ctestify_tend, &ctestify_tstart, &ctestify_tresult); \
+        if (ctestify_tresult.tv_sec) fprintf(ctestify_stdout, "%s%s%s %s.%s (%ld.%03lds)\n", CRED, "[ FAILURE ]", CRESET, current_test_suite, testname, ctestify_tresult.tv_sec, ctestify_tresult.tv_usec / 1000); \
+		else fprintf(ctestify_stdout, "%s%s%s %s.%s (%ldms)\n", CRED, "[ FAILURE ]", CRESET, current_test_suite, testname, ctestify_tresult.tv_usec / 1000); \
 		ctestify_failed++; \
 		if (isassert) assert_ctestify_failed++; \
         if (strlen(errmsg) > 1) \
@@ -240,13 +242,14 @@ int RETISGOOD(Test test, ComparerResult result){
 #define SAFE_WRAPPER(func, line, errmsg, test_name, test, value, expected, index) \
 	if (ctestify_firstphase){ctestify_total_functions++;} else if (!assert_ctestify_failed) { \
     fprintf(ctestify_stdout, "%s%s%s %s.%s\n", CGREEN, "[ RUN     ]", CRESET, current_test_suite, test_name); \
-    ctestify_tstart = clock(); \
+    gettimeofday(&ctestify_tstart, NULL); \
 	if (!setjmp(ctestify_sigsegv_buf)){ \
 		func(errmsg, line, COMPARER(value, expected), test, #value, #expected, test_name, index); \
 	} else { \
-		ctestify_tend = clock(); \
-		long double time = ((long double)(ctestify_tend - ctestify_tstart)) / CLOCKS_PER_SEC; \
-		fprintf(ctestify_stdout, "%s[ SIGSEGV ]%s %s.%s (%.3Lf%s)\n\t%s\n", CRED, CRESET, current_test_suite, test_name, time < 1000 ? time * 1000 : time, time < 1000 ? "ms" : "s", ctestify_messages[7]); \
+		gettimeofday(&ctestify_tend, NULL); \
+		timersub(&ctestify_tend, &ctestify_tstart, &ctestify_tresult); \
+		if (ctestify_tresult.tv_sec) fprintf(ctestify_stdout, "%s[ SIGSEGV ]%s %s.%s (%ld.%03lds)\n\t%s\n", CRED, CRESET, current_test_suite, test_name, ctestify_tresult.tv_sec, ctestify_tresult.tv_usec / 1000, ctestify_messages[7]); \
+		else fprintf(ctestify_stdout, "%s[ SIGSEGV ]%s %s.%s (%ldms)\n\t%s\n", CRED, CRESET, current_test_suite, test_name, ctestify_tresult.tv_usec / 1000, ctestify_messages[7]); \
 		assert_ctestify_failed++;ctestify_failed++;ctestify_ran++;}}
 
 //General EXPECT and ASSERT declarations  
@@ -350,7 +353,7 @@ int main(){
     fprintf(ctestify_stdout, "%s[=========]%s Setting up testing environment...\n\n", CGREEN, CRESET);
     signal(SIGSEGV, sigsegv_handler);
     ctestify_total_functions = 0;
-    time_t start, end;
+    struct timeval start, end, result;
     // Disable stdout 
     int stdout_backup = dup(fileno(stdout));
     int dev_null_fd = open("/dev/null", O_WRONLY);
@@ -371,16 +374,17 @@ int main(){
     }
     // Running tests
     fprintf(ctestify_stdout, "%s[=========]%s Running %d tests\n", CGREEN, CRESET, ctestify_total_functions);
-    start = clock();
+    gettimeofday(&start, NULL);
     test_main();
-    end = clock();
+    gettimeofday(&end, NULL);
     // Tests finalization, print results and destroy testing environment
-    long double total_time = ((double)(end - start)) / CLOCKS_PER_SEC;
+    timersub(&end, &start, &result);
     if (ctestify_successed == 0) fprintf(ctestify_stdout, CRED);
     else if (ctestify_failed == 0) fprintf(ctestify_stdout, CGREEN);
     else fprintf(ctestify_stdout, CYELLOW);
     fprintf(ctestify_stdout, "[=========]%s %d out of %d tests finished ", CRESET, ctestify_ran, ctestify_total_functions);
-    fprintf(ctestify_stdout, "(%.3Lf%s total)\n", total_time < 1000 ? total_time * 1000 : total_time, total_time < 1000 ? "ms" : "s");
+    if (result.tv_sec) fprintf(ctestify_stdout, "(%ld.%03lds total)\n", result.tv_sec, result.tv_usec / 1000);
+	else fprintf(ctestify_stdout, "(%ldms total)\n", result.tv_usec / 1000);
     fprintf(ctestify_stdout, "%s[=========]%s Destroying testing environment...\n\n", CGREEN, CRESET);
     if (TestingEnvironmentDestroy())
         fprintf(ctestify_stdout, CRED "\nTesting environment destroy failure!\n" CRESET);
