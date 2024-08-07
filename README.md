@@ -11,6 +11,10 @@
          alt="GitHub opened issues">
     <img src="https://img.shields.io/badge/status-stable-lime"
          alt="Status">
+    <img src="https://img.shields.io/github/license/HyperWinX/CTestify?color=lime"
+         alt="License">
+    <img src="https://img.shields.io/github/stars/HyperWinX/CTestify?color=lime"
+         alt="Stars">
 </p>
 
 ---
