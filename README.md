@@ -13,19 +13,16 @@
          alt="Status">
 </p>
 
-> [!IMPORTANT]
-> This branch has stable code, so it's recommended to use it, and not development branch.
-
 ---
 <table>
 <tr>
 <td>
 
-**CTestify** is a testing framework for C programs, aiming to be fast and easy as possible.
+**CTestify** is a testing framework for C programs, designed to be as fast and easy to use as possible.
 
-**CTestify** does two iterations: first iteration only counts tests. Second one actually executes tests. **CTestify** measures test execution time, and prints it when test is finished. Also, it has built-in protection against unexpected segmentation faults! If test got segfaulted, test gets special mark **[ SIGSEGV ]** instead of **[ FAILURE ]**.
+**CTestify** runs in two iterations: the first counts the tests, while the second actually executes them. It measures the test execution time and displays it upon completion. Additionally, it includes built-in protection against unexpected segmentation faults. If a test encounters a segfault, it gets a special mark **[ SIGSEGV ]** instead of **[ FAILURE ]**.
 
-If you need fast and simple test framework - use **CTestify**!
+If you need a fast and simple testing framework, choose **CTestify**!
 
 </td>
 </tr>
