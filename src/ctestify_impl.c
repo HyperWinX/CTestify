@@ -5,8 +5,9 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdbool.h>
+#include <assert.h>
 
-//Colors ANSI escape sequences
 #define CRED     "\x1b[31m"
 #define CGREEN   "\x1b[32m"
 #define CYELLOW  "\x1b[33m"
@@ -30,6 +31,40 @@ typedef enum ComparisonResult {
   EQ,
   NOT_EQ
 } ComparisonResult;
+typedef enum TestType {
+  __EQ,
+  __NEQ,
+  __LESS,
+  __GR,
+  __LESSE,
+  __GRE
+} TestType;
+typedef enum ComparedType {
+  Int8,
+  Int16,
+  Int32,
+  Int64,
+  UInt8,
+  UInt16,
+  UInt32,
+  UInt64,
+  Float,
+  Double,
+  String,
+  Unknown
+} ComparedType;
+typedef union ComparedObject {
+  char* str;
+  int64_t s_int;
+  uint64_t u_int;
+  float f_val;
+  double d_val;
+} ComparedObject;
+typedef struct ComparisonInfo {
+  ComparisonResult result;
+  ComparedType type;
+  ComparedObject obj1, obj2;
+} ComparisonInfo;
 
 //Internal data
 HIDDEN _test* head = NULL;
@@ -38,66 +73,52 @@ HIDDEN _test* current = NULL;
 HIDDEN FILE* ct_stdout = NULL;
 HIDDEN long double ct_tstart;
 HIDDEN long double ct_tend;
+HIDDEN int running = 1;
+
+HIDDEN int total_tests = 0;
+HIDDEN int successful = 0;
+HIDDEN int failed = 0;
 
 // Internal functions
-HIDDEN long double __calc_test_time() {
+long double __ctestify_calc_test_time() {
   return ((long double)(ct_tend - ct_tstart)) / CLOCKS_PER_SEC;
 }
 
 // Comparison functions
-ComparisonResult __ctestify_compare_uint8_t(uint8_t a, uint8_t b) {
-  if (a < b) return LESS;
-  else if (a > b) return BIGGER;
-  else return EQ;
-}
-ComparisonResult __ctestify_compare_uint16_t(uint16_t a, uint16_t b) {
-  if (a < b) return LESS;
-  else if (a > b) return BIGGER;
-  else return EQ;
-}
-ComparisonResult __ctestify_compare_uint32_t(uint32_t a, uint32_t b) {
-  if (a < b) return LESS;
-  else if (a > b) return BIGGER;
-  else return EQ;
-}
-ComparisonResult __ctestify_compare_uint64_t(uint64_t a, uint64_t b) {
-  if (a < b) return LESS;
-  else if (a > b) return BIGGER;
-  else return EQ;
-}
-ComparisonResult __ctestify_compare_int8_t(int8_t a, int8_t b) {
-  if (a < b) return LESS;
-  else if (a > b) return BIGGER;
-  else return EQ;
-}
-ComparisonResult __ctestify_compare_int16_t(int16_t a, int16_t b) {
-  if (a < b) return LESS;
-  else if (a > b) return BIGGER;
-  else return EQ;
-}
-ComparisonResult __ctestify_compare_int32_t(int32_t a, int32_t b) {
-  if (a < b) return LESS;
-  else if (a > b) return BIGGER;
-  else return EQ;
-}
-ComparisonResult __ctestify_compare_int64_t(int64_t a, int64_t b) {
-  if (a < b) return LESS;
-  else if (a > b) return BIGGER;
-  else return EQ;
-}
 ComparisonResult __ctestify_compare_string(char* a, char* b) {
-  if (strcmp(a, b)) return NOT_EQ;
+  return (strcmp(a, b) ? NOT_EQ : EQ);
+}
+ComparisonResult __ctestify_compare_float(float a, float b) {
+  if (a < b) return LESS;
+  else if (a > b) return BIGGER;
+  else return EQ;
+}
+ComparisonResult __ctestify_compare_double(double a, double b) {
+  if (a < b) return LESS;
+  else if (a > b) return BIGGER;
   else return EQ;
 }
 
+void __ctestify_verify_result(ComparisonInfo result, bool is_fatal, char* err_msg, char* expr1, char* expr2, TestType type) {
+  int _failed = 0;
 
-void __ctestify_verify_result(int result) {
-  long double time = __calc_test_time();
-  if (result) {
-    fprintf(ct_stdout, "%s%s%s %s.%s (%.3Lf%s)\n", CGREEN, "[      OK ]", CRESET, current->suite_name, current->name, time < 1000 ? time * 1000 : time, time < 1000 ? "ms" : "s"); \
-  } else {
-
+  switch (type) {
+    case __EQ:
+      if (result.result != EQ) {
+        ++_failed; break;
+      }
+    case __NEQ:
+      if (result.result != NOT_EQ) {
+        ++_failed; break;
+      }
+    default: assert(1);
   }
+
+  if (!_failed) return;
+
+  ct_tend = clock();
+  long double time = __ctestify_calc_test_time();
+  fprintf(ct_stdout, "%s%s%s %s.%s (%.3Lf%s)\n", CRED, "[ FAILURE ]", CRESET, current->suite_name, current->name, time < 1000 ? time * 1000 : time, time < 1000 ? "ms" : "s");
 }
 
 void __ctestify_register_ctest(_test* _test_ptr) {
@@ -107,12 +128,23 @@ void __ctestify_register_ctest(_test* _test_ptr) {
     last->next = _test_ptr;
     last = last->next;
   }
+  ++total_tests;
+}
+
+ComparisonInfo __ctestify_comparisoninfo_ctor(ComparisonResult result, ComparedType type, ComparedObject obj1, ComparedObject obj2) {
+  ComparisonInfo info = {
+    result,
+    type,
+    obj1,
+    obj2
+  };
+  return info;
 }
 
 void __ctestify_run_all_tests() {
   // Setup stdout
   ct_stdout = fopen("/dev/tty", "a");
-  // Disable general stdout
+    // Disable general stdout
   dup2(open("/dev/null", O_WRONLY), fileno(stdout));
 
   // Traverse linked list, executing tests
