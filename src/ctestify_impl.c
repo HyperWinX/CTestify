@@ -22,7 +22,7 @@ typedef struct _test {
   char* suite_name;
   char* name;
   char* file;
-  char* line;
+  int line;
 } _test;
 
 typedef enum ComparisonResult {
@@ -80,8 +80,35 @@ HIDDEN int successful = 0;
 HIDDEN int failed = 0;
 
 // Internal functions
-long double __ctestify_calc_test_time() {
+HIDDEN long double __ctestify_calc_test_time() {
   return ((long double)(ct_tend - ct_tstart)) / CLOCKS_PER_SEC;
+}
+
+HIDDEN void __ctestify_obj_to_str(ComparedObject* restrict _Nonnull obj, ComparedType type, char* restrict _Nonnull dst) {
+  switch (type) {
+    case Int8:
+    case Int16:
+    case Int32:
+    case Int64:
+      sprintf(dst, "%ld", (int64_t)obj->s_int);
+      break;
+    case UInt8:
+    case UInt16:
+    case UInt32:
+    case UInt64:
+      sprintf(dst, "%lu", (uint64_t)obj->u_int);
+      break;
+    case Float:
+      sprintf(dst, "%f", obj->f_val);
+      break;
+    case Double:
+      sprintf(dst, "%lf", obj->d_val);
+      break;
+    case String:
+      sprintf(dst, "%s", obj->str);
+      break;
+    default: assert(0);
+  }
 }
 
 // Comparison functions
@@ -100,18 +127,24 @@ ComparisonResult __ctestify_compare_double(double a, double b) {
 }
 
 void __ctestify_verify_result(ComparisonInfo result, bool is_fatal, char* err_msg, char* expr1, char* expr2, TestType type) {
+  char s_obj1[64], s_obj2[64];
+  char *str1 = s_obj1, *str2 = s_obj2;
   int _failed = 0;
+
+  if (!running) return;
 
   switch (type) {
     case __EQ:
       if (result.result != EQ) {
         ++_failed; break;
       }
+      break;
     case __NEQ:
       if (result.result != NOT_EQ) {
         ++_failed; break;
       }
-    default: assert(1);
+      break;
+    default: assert(0);
   }
 
   if (!_failed) return;
@@ -119,6 +152,26 @@ void __ctestify_verify_result(ComparisonInfo result, bool is_fatal, char* err_ms
   ct_tend = clock();
   long double time = __ctestify_calc_test_time();
   fprintf(ct_stdout, "%s%s%s %s.%s (%.3Lf%s)\n", CRED, "[ FAILURE ]", CRESET, current->suite_name, current->name, time < 1000 ? time * 1000 : time, time < 1000 ? "ms" : "s");
+
+  if (result.type == String) {
+    str1 = result.obj1.str;
+    str2 = result.obj2.str;
+  } else {
+    __ctestify_obj_to_str(&result.obj1, result.type, str1);
+    __ctestify_obj_to_str(&result.obj2, result.type, str2);
+  }
+
+  switch (type) {
+    case __EQ:
+      fprintf(ct_stdout, "Failed test at %s:%d\n", current->file, current->line);
+      fprintf(ct_stdout, "Expected equality of following two values:\n");
+      fprintf(ct_stdout, "\tExpr: (%s), value: (%s)\n", expr1, str1);
+      fprintf(ct_stdout, "\tExpr: (%s), value: (%s)\n", expr2, str2);
+      break;
+    default: assert(0);
+  }
+  
+  running = is_fatal ? 0 : 1;
 }
 
 void __ctestify_register_ctest(_test* _test_ptr) {

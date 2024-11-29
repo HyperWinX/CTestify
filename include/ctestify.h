@@ -11,7 +11,7 @@ typedef struct _test {
   char* suite_name;
   char* name;
   char* file;
-  char* line;
+  int line;
 } _test;
 typedef enum ComparisonResult {
   BIGGER,
@@ -105,7 +105,7 @@ extern ComparisonResult __ctestify_compare_double(double, double);
 
 #define CTEST(suite, test_name) \
   void _TEST_FUNC(suite, test_name)(void); \
-  struct _test _TEST_PROP(suite, test_name) = {.test_ptr = &_TEST_FUNC(suite, test_name), .suite_name = #suite, .name = #test_name, .file = __FILE__}; \
+  struct _test _TEST_PROP(suite, test_name) = {.test_ptr = &_TEST_FUNC(suite, test_name), .suite_name = #suite, .name = #test_name, .file = __FILE__, .line = __LINE__}; \
   __attribute__((constructor)) void _TEST_CTOR(suite, test_name)() { \
     __ctestify_register_ctest(&_TEST_PROP(suite, test_name)); \
   } \

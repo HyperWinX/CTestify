@@ -3,6 +3,8 @@
 
 CTEST(FooSuite, Test1) {
   EXPECT_EQ(5, 5);
+  EXPECT_EQ(5, 10);
+  EXPECT_EQ(5, 5);
 }
 
 int main() {
