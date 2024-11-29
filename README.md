@@ -1,6 +1,6 @@
 <div align="center">
-    <h1>CTestify</h1>
-    <p>Advanced testing framework.</p>
+    <h1>CTestify Refresh</h1>
+    <p>CTestify, rewritten from scratch.</p>
     <p>
         <a href="https://github.com/HyperWinX/CTeatify/graphs/contributors">
             <img src="https://img.shields.io/github/contributors/HyperWinX/CTestify" alt="contributors"/>
