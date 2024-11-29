@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <stdbool.h>
 
+// Disable warnings on casting integers
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wint-to-pointer-cast"
 
@@ -85,7 +86,8 @@ extern ComparisonResult __ctestify_compare_double(double, double);
   double: Double, \
   char*: String, \
   default: Unknown))
-#define __CT_CONSTRUCT_OBJ(type, val) ({ \
+
+#define __CT_CONSTRUCT_OBJ1(type, val) ({ \
     ComparedObject obj; \
     switch(type) { \
       case UInt8: \
@@ -107,6 +109,22 @@ extern ComparisonResult __ctestify_compare_double(double, double);
       default: \
       assert(0 && "Unknown compared object type, provide custom comparer"); \
     }; obj; })
+
+#define __CT_CONSTRUCT_OBJ(type, val) ({ \
+    ComparedObject obj; \
+    _Generic((val), \
+      uint8_t: obj.u_int, \
+      uint16_t: obj.u_int, \
+      uint32_t: obj.u_int, \
+      uint64_t: obj.u_int, \
+      int8_t: obj.s_int, \
+      int16_t: obj.s_int, \
+      int32_t: obj.s_int, \
+      int64_t: obj.s_int, \
+      float: obj.f_val, \
+      double: obj.d_val, \
+      char*: obj.str) = val; obj; })
+
 
 #define CTEST(suite, test_name) \
   void _TEST_FUNC(suite, test_name)(void); \
@@ -131,7 +149,7 @@ extern ComparisonResult __ctestify_compare_double(double, double);
   int64_t: __CT_INTCOMPARE(_val, _correct_val), \
   float: __ctestify_compare_float((float)_val, (float)_correct_val), \
   double: __ctestify_compare_double((double)_val, (double)_correct_val), \
-  char*: __ctestify_compare_string((char*)_val, (char*)_correct_val), \
+  char*: __ctestify_compare_string(_val, _correct_val), \
   default: __CT_UNICOMPARE(_val, _correct_val))
 
 #define EXPECT_EQ(...) __CT_EXPECT_IMPL(__VA_ARGS__, __CT_EXPECT_EQM, __CT_EXPECT_EQ)(__VA_ARGS__)
