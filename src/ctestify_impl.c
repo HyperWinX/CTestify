@@ -172,6 +172,7 @@ void __ctestify_verify_result(ComparisonInfo result, bool is_fatal, char* err_ms
   }
   
   running = is_fatal ? 0 : 1;
+  ++failed;
 }
 
 void __ctestify_register_ctest(_test* _test_ptr) {
@@ -207,6 +208,10 @@ void __ctestify_run_all_tests() {
     ct_tstart = clock();
     current->test_ptr();
     ct_tend = clock();
+    long double time = __ctestify_calc_test_time();
+    if (!failed) {
+      fprintf(ct_stdout, "%s%s%s %s.%s (%.3Lf%s)\n", CGREEN, "[      OK ]", CRESET, current->suite_name, current->name, time < 1000 ? time * 1000 : time, time < 1000 ? "ms" : "s");
+    }
     current = current->next;
   }
 }

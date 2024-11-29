@@ -1,6 +1,11 @@
+#pragma once
+
 #include <stdint.h>
 #include <assert.h>
 #include <stdbool.h>
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wint-to-pointer-cast"
 
 // Defining internal types
 typedef void(*test)(void);
