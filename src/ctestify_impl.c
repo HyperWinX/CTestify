@@ -29,7 +29,8 @@ typedef enum ComparisonResult {
   BIGGER,
   LESS,
   EQ,
-  NOT_EQ
+  NOT_EQ,
+  UNDEFINED
 } ComparisonResult;
 typedef enum TestType {
   __EQ,
@@ -126,12 +127,39 @@ ComparisonResult __ctestify_compare_double(double a, double b) {
   else return EQ;
 }
 
-void __ctestify_verify_result(ComparisonInfo result, bool is_fatal, char* err_msg, char* expr1, char* expr2, TestType type) {
+void __ctestify_verify_result(ComparisonInfo result, bool is_fatal, char* err_msg, char* expr1, char* expr2, TestType type, int line, char* file) {
   char s_obj1[64], s_obj2[64];
   char *str1 = s_obj1, *str2 = s_obj2;
   int _failed = 0;
 
   if (!running) return;
+
+  if (result.result == UNDEFINED) {
+    switch (result.type) {
+      case Int8:
+      case Int16:
+      case Int32:
+      case Int64:
+        result.result = (result.obj1.s_int == result.obj2.s_int) ? EQ : (result.obj1.s_int > result.obj2.s_int ? BIGGER : LESS);
+        break;
+      case UInt8:
+      case UInt16:
+      case UInt32:
+      case UInt64:
+        result.result = (result.obj1.u_int == result.obj2.u_int) ? EQ : (result.obj1.u_int > result.obj2.u_int ? BIGGER : LESS);
+        break;
+      case Float:
+        result.result = (result.obj1.f_val == result.obj2.f_val) ? EQ : (result.obj1.f_val > result.obj2.f_val ? BIGGER : LESS);
+        break;
+      case Double:
+        result.result = (result.obj1.d_val == result.obj2.d_val) ? EQ : (result.obj1.d_val > result.obj2.d_val ? BIGGER : LESS);
+        break;
+      case String:
+        result.result = !strcmp(result.obj1.str, result.obj2.str) ? EQ : NOT_EQ;
+        break;
+      default: __builtin_unreachable();
+    }
+  }
 
   switch (type) {
     case __EQ:
@@ -163,7 +191,7 @@ void __ctestify_verify_result(ComparisonInfo result, bool is_fatal, char* err_ms
 
   switch (type) {
     case __EQ:
-      fprintf(ct_stdout, "Failed test at %s:%d\n", current->file, current->line);
+      fprintf(ct_stdout, "Failed test at %s:%d\n", file, line);
       fprintf(ct_stdout, "Expected equality of following two values:\n");
       fprintf(ct_stdout, "\tExpr: (%s), value: (%s)\n", expr1, str1);
       fprintf(ct_stdout, "\tExpr: (%s), value: (%s)\n", expr2, str2);
@@ -185,9 +213,9 @@ void __ctestify_register_ctest(_test* _test_ptr) {
   ++total_tests;
 }
 
-ComparisonInfo __ctestify_comparisoninfo_ctor(ComparisonResult result, ComparedType type, ComparedObject obj1, ComparedObject obj2) {
+ComparisonInfo __ctestify_comparisoninfo_ctor(ComparedType type, ComparedObject obj1, ComparedObject obj2, ComparisonResult res) {
   ComparisonInfo info = {
-    result,
+    res,
     type,
     obj1,
     obj2

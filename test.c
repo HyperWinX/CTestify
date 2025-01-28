@@ -13,7 +13,8 @@ CTEST(CTestifyTesting, TestExpectEq) {
   int64_t a8 = 5, b8 = 5;
   float a9 = 5.95, b9 = 5.95;
   double a10 = 3.14179837, b10 = 3.14179837;
-
+  int t1 = 5, t2 = 10;
+  
   EXPECT_EQ(a1, b1);
   EXPECT_EQ(a2, b2);
   EXPECT_EQ(a3, b3);
@@ -24,6 +25,7 @@ CTEST(CTestifyTesting, TestExpectEq) {
   EXPECT_EQ(a8, b8);
   EXPECT_EQ(a9, b9);
   EXPECT_EQ(a10, b10);
+  EXPECT_EQ(t1, t2);
 }
 
 int main() {

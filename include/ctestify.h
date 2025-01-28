@@ -23,7 +23,8 @@ typedef enum ComparisonResult {
   BIGGER,
   LESS,
   EQ,
-  NOT_EQ
+  NOT_EQ,
+  UNDEFINED
 } ComparisonResult;
 typedef enum TestType {
   __EQ,
@@ -61,13 +62,19 @@ typedef struct ComparisonInfo {
 } ComparisonInfo;
 
 extern void __ctestify_register_ctest(struct _test* _test_ptr);
-extern ComparisonInfo __ctestify_comparisoninfo_ctor(ComparisonResult, ComparedType, ComparedObject, ComparedObject);
+extern ComparisonInfo __ctestify_comparisoninfo_ctor(ComparedType, ComparedObject, ComparedObject, ComparisonResult);
 extern void __ctestify_run_all_tests();
 
-extern void __ctestify_verify_result(ComparisonInfo, int, char*, char*, char*, TestType);
+extern void __ctestify_verify_result(ComparisonInfo, int, char*, char*, char*, TestType, int, char*);
 extern ComparisonResult __ctestify_compare_string(char*, char*);
 extern ComparisonResult __ctestify_compare_float(float, float);
 extern ComparisonResult __ctestify_compare_double(double, double);
+
+inline void __ctestify_assign_union_str(ComparedObject* obj, char* val) { obj->str = val; }
+inline void __ctestify_assign_union_u64(ComparedObject* obj, int64_t val) { obj->s_int = val; }
+inline void __ctestify_assign_union_i64(ComparedObject* obj, uint64_t val) { obj->u_int = val; }
+inline void __ctestify_assign_union_f32(ComparedObject* obj, float val) { obj->f_val = val; }
+inline void __ctestify_assign_union_f64(ComparedObject* obj, double val) { obj->d_val = val; }
 
 #define _TEST_FUNC(suite, test_name) __ctest_##suite_##test_name
 #define _TEST_PROP(suite, test_name) __test_repr_##suite_##test_name
@@ -89,28 +96,22 @@ extern ComparisonResult __ctestify_compare_double(double, double);
 
 #define __CT_CONSTRUCT_OBJ1(type, val) ({ \
     ComparedObject obj; \
-    switch(type) { \
-      case UInt8: \
-      case UInt16: \
-      case UInt32: \
-      case UInt64: \
-      obj.u_int = val; break; \
-      case Int8: \
-      case Int16: \
-      case Int32: \
-      case Int64: \
-      obj.s_int = val; break; \
-      case String: \
-      obj.str = (char*)val; break; \
-      case Float: \
-      obj.f_val = (float)val; break; \
-      case Double: \
-      obj.d_val = (double)val; break; \
-      default: \
-      assert(0 && "Unknown compared object type, provide custom comparer"); \
-    }; obj; })
+    _Generic((val), \
+      uint8_t: __ctestify_assign_union_u64, \
+      uint16_t: __ctestify_assign_union_u64, \
+      uint32_t: __ctestify_assign_union_u64, \
+      uint64_t: __ctestify_assign_union_u64, \
+      int8_t: __ctestify_assign_union_i64, \
+      int16_t: __ctestify_assign_union_i64, \
+      int32_t: __ctestify_assign_union_i64, \
+      int64_t: __ctestify_assign_union_i64, \
+      float: __ctestify_assign_union_f32, \
+      double: __ctestify_assign_union_f64, \
+      char*: __ctestify_assign_union_str, \
+      default: __ctestify_nofunction("Unknown type, cannot assign to union!")(&obj, val); \
+     obj; })
 
-#define __CT_CONSTRUCT_OBJ(type, val) ({ \
+#define __CT_CONSTRUCT_OBJ(val) ({ \
     ComparedObject obj; \
     _Generic((val), \
       uint8_t: obj.u_int, \
@@ -137,23 +138,24 @@ extern ComparisonResult __ctestify_compare_double(double, double);
 #define RUN_ALL_TESTS() __ctestify_run_all_tests()
 
 #define __CT_UNICOMPARE(val, expected) (val == expected)
-#define __CT_INTCOMPARE(val, expected) __ctestify_comparisoninfo_ctor((val == expected ? EQ : (val > expected ? BIGGER : LESS)), __CT_DETERMINE_TYPE(val), __CT_CONSTRUCT_OBJ(__CT_DETERMINE_TYPE(val), val), __CT_CONSTRUCT_OBJ(__CT_DETERMINE_TYPE(expected), expected))
+#define __CT_COMPAREINFO_CTOR(val, expected) __ctestify_comparisoninfo_ctor(__CT_DETERMINE_TYPE(val), __CT_CONSTRUCT_OBJ(val), __CT_CONSTRUCT_OBJ(expected), UNDEFINED)
+
 #define __CT_GENERIC_COMPARE(_val, _correct_val) _Generic((_val), \
-  uint8_t: __CT_INTCOMPARE(_val, _correct_val), \
-  uint16_t: __CT_INTCOMPARE(_val, _correct_val), \
-  uint32_t: __CT_INTCOMPARE(_val, _correct_val), \
-  uint64_t: __CT_INTCOMPARE(_val, _correct_val), \
-  int8_t: __CT_INTCOMPARE(_val, _correct_val), \
-  int16_t: __CT_INTCOMPARE(_val, _correct_val), \
-  int32_t: __CT_INTCOMPARE(_val, _correct_val), \
-  int64_t: __CT_INTCOMPARE(_val, _correct_val), \
-  float: __ctestify_compare_float((float)_val, (float)_correct_val), \
-  double: __ctestify_compare_double((double)_val, (double)_correct_val), \
-  char*: __ctestify_compare_string(_val, _correct_val), \
-  default: __CT_UNICOMPARE(_val, _correct_val))
+  uint8_t: __CT_COMPAREINFO_CTOR(_val, _correct_val), \
+  uint16_t: __CT_COMPAREINFO_CTOR(_val, _correct_val), \
+  uint32_t: __CT_COMPAREINFO_CTOR(_val, _correct_val), \
+  uint64_t: __CT_COMPAREINFO_CTOR(_val, _correct_val), \
+  int8_t: __CT_COMPAREINFO_CTOR(_val, _correct_val), \
+  int16_t: __CT_COMPAREINFO_CTOR(_val, _correct_val), \
+  int32_t: __CT_COMPAREINFO_CTOR(_val, _correct_val), \
+  int64_t: __CT_COMPAREINFO_CTOR(_val, _correct_val), \
+  float: __CT_COMPAREINFO_CTOR(_val, _correct_val), \
+  double: __CT_COMPAREINFO_CTOR(_val, _correct_val), \
+  char*:  __CT_COMPAREINFO_CTOR(_val, _correct_val), \
+  default: __ctestify_comparisoninfo_ctor(Unknown, __CT_CONSTRUCT_OBJ(#_val), __CT_CONSTRUCT_OBJ(#_correct_val), _val == _correct_val ? EQ : NOT_EQ))
 
 #define EXPECT_EQ(...) __CT_EXPECT_IMPL(__VA_ARGS__, __CT_EXPECT_EQM, __CT_EXPECT_EQ)(__VA_ARGS__)
 #define __CT_EXPECT_IMPL(_1, _2, _3, NAME, ...) __CT_EXPECT_EQ
-#define __CT_EXPECT_EQ(val, expected) __ctestify_verify_result(__CT_GENERIC_COMPARE(val, expected), false, NULL, #val, #expected, __EQ)
+#define __CT_EXPECT_EQ(val, expected) __ctestify_verify_result(__CT_GENERIC_COMPARE(val, expected), false, NULL, #val, #expected, __EQ, __LINE__, __FILE__)
 #define __CT_EXPECT_EQM(val, expected, err_msg) __ctestify_verify_result(__CT_GENERIC_COMPARE(val, expected), false, err_msg, #val, #expected, __EQ)
 
