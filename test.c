@@ -25,7 +25,7 @@ CTEST(CTestifyTesting, TestExpectEq) {
   EXPECT_EQ(a8, b8);
   EXPECT_EQ(a9, b9);
   EXPECT_EQ(a10, b10);
-  EXPECT_EQ(t1, t2);
+  EXPECT_EQ(t1, t2, "Damn, %s with %s is not equal to %s with %s");
 }
 
 int main() {

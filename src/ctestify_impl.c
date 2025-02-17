@@ -188,18 +188,25 @@ void __ctestify_verify_result(ComparisonInfo result, bool is_fatal, char* err_ms
     __ctestify_obj_to_str(&result.obj1, result.type, str1);
     __ctestify_obj_to_str(&result.obj2, result.type, str2);
   }
-
+  fprintf(ct_stdout, "Failed test at %s:%d\n", file, line);
   switch (type) {
     case __EQ:
-      fprintf(ct_stdout, "Failed test at %s:%d\n", file, line);
-      fprintf(ct_stdout, "Expected equality of following two values:\n");
-      fprintf(ct_stdout, "\tExpr: (%s), value: (%s)\n", expr1, str1);
-      fprintf(ct_stdout, "\tExpr: (%s), value: (%s)\n", expr2, str2);
+      if (err_msg) {
+        fprintf(ct_stdout, err_msg, expr1, str1, expr2, str2);
+      } else {
+        fprintf(ct_stdout, "Expected equality of following values:\n\tExpr: %s, value: %s\n\tExpr: %s, value: %s\n", expr1, str1, expr2, str2);
+      }
       break;
+    case __NEQ:
+      if (err_msg) {
+        fprintf(ct_stdout, err_msg, expr1, str1, expr2, str2);
+      } else {
+        fprintf("Expected not equality of following values: \n\tExpr: %s, value: %s\n\tExpr: %s, value: %s\n", expr1, str1, expr2, str2);
+      }
     default: assert(0);
   }
   
-  running = is_fatal ? 0 : 1;
+  running = !is_fatal;
   ++failed;
 }
 

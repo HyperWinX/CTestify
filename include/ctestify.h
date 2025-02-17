@@ -154,8 +154,11 @@ inline void __ctestify_assign_union_f64(ComparedObject* obj, double val) { obj->
   char*:  __CT_COMPAREINFO_CTOR(_val, _correct_val), \
   default: __ctestify_comparisoninfo_ctor(Unknown, __CT_CONSTRUCT_OBJ(#_val), __CT_CONSTRUCT_OBJ(#_correct_val), _val == _correct_val ? EQ : NOT_EQ))
 
-#define EXPECT_EQ(...) __CT_EXPECT_IMPL(__VA_ARGS__, __CT_EXPECT_EQM, __CT_EXPECT_EQ)(__VA_ARGS__)
-#define __CT_EXPECT_IMPL(_1, _2, _3, NAME, ...) __CT_EXPECT_EQ
-#define __CT_EXPECT_EQ(val, expected) __ctestify_verify_result(__CT_GENERIC_COMPARE(val, expected), false, NULL, #val, #expected, __EQ, __LINE__, __FILE__)
-#define __CT_EXPECT_EQM(val, expected, err_msg) __ctestify_verify_result(__CT_GENERIC_COMPARE(val, expected), false, err_msg, #val, #expected, __EQ)
+#define __CT_EXPECT_EQ(val, expected) \
+    __ctestify_verify_result(__CT_GENERIC_COMPARE(val, expected), false, NULL, #val, #expected, __EQ, __LINE__, __FILE__)
 
+#define __CT_EXPECT_EQM(val, expected, err_msg) \
+    __ctestify_verify_result(__CT_GENERIC_COMPARE(val, expected), false, err_msg, #val, #expected, __EQ, __LINE__, __FILE__)
+
+#define EXPECT_EQ(...) __CT_EXPECT_IMPL(__VA_ARGS__, __CT_EXPECT_EQM, __CT_EXPECT_EQ)(__VA_ARGS__)
+#define __CT_EXPECT_IMPL(_1, _2, _3, NAME, ...) NAME
